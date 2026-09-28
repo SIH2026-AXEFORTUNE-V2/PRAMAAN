@@ -70,6 +70,7 @@ export interface AppConfig {
   parameters: Record<keyof Omit<Params, "audience_custom" | "instructions">, ParameterMeta>;
   operator: { name: string; role: string };
   workspace: string;
+  image_generation: { available: boolean; model: string | null };
 }
 
 export interface SourceInfo {
@@ -239,6 +240,18 @@ export interface VersionMeta {
 export type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
 export type Content = { [k: string]: Json };
 
+export interface Illustration {
+  slot: string;
+  label: string;
+  brief: string;
+  prompt: string;
+  removed: string[];
+  model: string;
+  sha256: string;
+  created_at: string;
+  bytes: number;
+}
+
 export interface Artifact {
   type: OutputType;
   label: string;
@@ -259,6 +272,7 @@ export interface Artifact {
   stale: { claim_id: string; reason: string; old_surfaces: string[]; new_value: string } | null;
   error: string | null;
   exported: { version: number; format: string; at: string; by: string }[];
+  illustrations?: Illustration[];
 }
 
 export interface ConsistencyConflict {

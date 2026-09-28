@@ -43,6 +43,17 @@ export function ArtifactThumb({ tid, a }: { tid: string; a: Artifact }) {
     );
   }
   const c = a.released ?? a.content;
+  const cover = a.illustrations?.find((x) => x.slot === "post" || x.slot === "slide-1" || x.slot.startsWith("scene-"));
+  if (cover) {
+    return (
+      <Desk>
+        <img src={api.illustrationUrl(tid, a.type, cover.slot, cover.sha256)} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-3 pt-8">
+          <p className="line-clamp-2 font-display text-[12.5px] leading-snug font-semibold text-white">{str(c.title) || str(c.hook) || a.label}</p>
+        </div>
+      </Desk>
+    );
+  }
   switch (a.type) {
     case "infographic":
       return (

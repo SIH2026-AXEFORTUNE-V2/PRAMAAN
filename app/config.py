@@ -43,6 +43,11 @@ GROQ_TEXT_MODELS = _list("GROQ_TEXT_MODEL", "openai/gpt-oss-120b,openai/gpt-oss-
 GROQ_ASR_MODEL = os.getenv("GROQ_ASR_MODEL", "whisper-large-v3-turbo").strip()
 GROQ_MAX_TOKENS = int(os.getenv("GROQ_MAX_TOKENS", "3500"))
 
+# Image generation (Visual Agent) via Cloudflare Workers AI.
+CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID", "").strip()
+CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "").strip()
+IMAGE_MODEL = os.getenv("IMAGE_MODEL", "@cf/black-forest-labs/flux-1-schnell").strip()
+
 # Which text engine to use: auto (Groq > self-hosted gateway > Hugging Face), or force one.
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "auto").strip().lower()
 if LLM_PROVIDER == "auto":

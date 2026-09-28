@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { ChevronLeft, Eye, FlaskConical, History, MoreHorizontal, Pencil, RefreshCcw, ShieldCheck, TriangleAlert } from "lucide-react";
+import { ChevronLeft, Eye, FlaskConical, History, ImagePlus, MoreHorizontal, Pencil, RefreshCcw, ShieldCheck, Sparkles, TriangleAlert } from "lucide-react";
 import { api } from "@/lib/api";
 import { cx, dateTime } from "@/lib/format";
 import { OutputIcon } from "@/lib/outputs";
@@ -23,6 +23,7 @@ import { Modal } from "@/components/ui/Overlay";
 import { EmptyState, Hash, ProgressBar, Skeleton, Tabs, TextArea } from "@/components/ui/misc";
 
 type View = "draft" | "released";
+const ILLUSTRATABLE: OutputType[] = ["linkedin", "presentation", "video"];
 type Side = "review" | "evidence" | "security" | "history";
 
 export function ArtifactPage() {
@@ -44,6 +45,8 @@ export function ArtifactPage() {
 
   const a = t?.artifacts[otype];
   const regen = useAction(api.regenerate, { success: "Regenerating this artefact only" });
+  const illustrate = useAction(api.illustrate, { success: "Visual Agent is generating illustrations" });
+  const imageGen = useApp((s) => s.config?.image_generation);
   const drift = useAction(api.simulateDrift, { errorTitle: "Could not inject test conflict" });
 
   useEffect(() => setOldVersion(null), [a?.version]);
@@ -101,6 +104,20 @@ export function ArtifactPage() {
             <Button size="sm" icon={<Pencil size={13} />} onClick={() => setEdit(!editing)} disabled={busy || !a.content}>
               Edit
             </Button>
+            {ILLUSTRATABLE.includes(otype) && (
+              <Button
+                size="sm"
+                icon={<ImagePlus size={14} />}
+                disabled={busy || !a.content || !imageGen?.available}
+                loading={illustrate.pending}
+                title={imageGen?.available ? `Generate illustrations with ${imageGen.model}` : "Image generation is not configured on this server"}
+                onClick={async () => {
+                  if (await illustrate.run(t.id, otype)) await refresh();
+                }}
+              >
+                {a.illustrations?.length ? "Redraw illustrations" : "Illustrate"}
+              </Button>
+            )}
             <Button size="sm" icon={<RefreshCcw size={13} />} onClick={() => setRegenOpen(true)} disabled={busy || !a.content}>
               Regenerate
             </Button>
@@ -190,7 +207,12 @@ export function ArtifactPage() {
             <article className="mx-auto max-w-[860px] rounded-xl border border-border bg-surface px-6 py-7 shadow-sm sm:px-10">
               {trace && (
                 <TraceProvider value={trace}>
-                  <ArtifactRenderer type={otype} content={content} svgUrl={api.previewSvgUrl(t.id, otype, a.version, view === "released")} />
+                  <ArtifactRenderer
+                    type={otype}
+                    content={content}
+                    svgUrl={api.previewSvgUrl(t.id, otype, a.version, view === "released")}
+                    images={oldVersion ? {} : Object.fromEntries((a.illustrations ?? []).map((x) => [x.slot, api.illustrationUrl(t.id, otype, x.slot, x.sha256)]))}
+                  />
                 </TraceProvider>
               )}
             </article>
@@ -225,6 +247,32 @@ export function ArtifactPage() {
             {side === "review" && (
               <>
                 <ApprovalPanel t={t} a={a} busy={busy} />
+                {(a.illustrations?.length ?? 0) > 0 && (
+                  <div className="rounded-xl border border-border px-4 py-3">
+                    <SectionLabel right={<span className="text-2xs text-subtle">{a.illustrations![0].model.split("/").pop()}</span>}>
+                      Illustrations
+                    </SectionLabel>
+                    <p className="mt-1 text-xs text-muted">Decorative only. Prompts come from the writer's visual suggestions, scrubbed before leaving the server.</p>
+                    <ul className="mt-2 space-y-2">
+                      {a.illustrations!.map((x) => (
+                        <li key={x.slot} className="text-xs">
+                          <details>
+                            <summary className="flex cursor-pointer items-center gap-2 font-medium text-fg">
+                              <Sparkles size={12} className="text-subtle" /> {x.label}
+                              {x.removed.length > 0 && <span className="text-2xs text-warning">{x.removed.length} item(s) removed</span>}
+                            </summary>
+                            <p className="mt-1.5 text-muted">
+                              <span className="font-medium text-fg">Prompt sent: </span>
+                              {x.prompt}
+                            </p>
+                            {x.removed.length > 0 && <p className="mt-1 text-warning">Removed: {x.removed.join(", ")}</p>}
+                            <p className="mt-1 font-mono text-2xs text-subtle">sha256 {x.sha256.slice(0, 16)}…</p>
+                          </details>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 {a.red_team && <RedTeamCard rt={a.red_team} compact />}
                 {issues.length > 0 && (
                   <div>

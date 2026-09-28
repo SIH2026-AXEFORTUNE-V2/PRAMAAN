@@ -4,6 +4,9 @@ import { arr, obj, str, strs } from "@/lib/content";
 import { cx } from "@/lib/format";
 import type { Content, OutputType } from "@/lib/types";
 import { T } from "../evidence/ClaimText";
+import { Illustration } from "./Illustration";
+
+type Images = Record<string, string>;
 
 function H({ children }: { children: React.ReactNode }) {
   return <h3 className="mt-7 mb-2.5 text-sm font-semibold text-muted first:mt-0">{children}</h3>;
@@ -195,10 +198,11 @@ function Advisory({ c }: { c: Content }) {
   );
 }
 
-function LinkedIn({ c }: { c: Content }) {
+function LinkedIn({ c, images }: { c: Content; images: Images }) {
   return (
     <div className="mx-auto max-w-[560px]">
-      <div className="rounded-xl border border-border bg-surface p-4">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="p-4 pb-0">
         <div className="mb-3 flex items-center gap-2.5">
           <span className="h-10 w-10 rounded-full bg-surface-3" />
           <div>
@@ -210,7 +214,9 @@ function LinkedIn({ c }: { c: Content }) {
           <T path="post" text={str(c.post)} />
         </p>
         <p className="mt-3 text-xs text-accent">{strs(c.hashtags).join(" ")}</p>
-        <div className="mt-3 flex gap-5 border-t border-border pt-2.5 text-2xs text-subtle">
+        </div>
+        <Illustration src={images["post"]} alt="Post image" className="mt-3 aspect-[1.91/1] bg-surface-3" />
+        <div className="mx-4 mb-3 flex gap-5 border-t border-border pt-2.5 text-2xs text-subtle">
           <span className="inline-flex items-center gap-1">
             <ThumbsUp size={13} /> Like
           </span>
@@ -305,15 +311,22 @@ function Infographic({ c, svgUrl }: { c: Content; svgUrl: string }) {
   );
 }
 
-function Presentation({ c }: { c: Content }) {
+function Presentation({ c, images }: { c: Content; images: Images }) {
   const slides = arr(c.slides).map(obj);
   const [i, setI] = useState(0);
   const s = slides[Math.min(i, slides.length - 1)] ?? {};
   const layout = str(s.layout);
   const dark = layout === "title" || layout === "closing" || layout === "big_stat";
+  const img = images[`slide-${i + 1}`];
   return (
     <div>
       <div className={cx("relative aspect-video overflow-hidden rounded-lg border border-border p-[6%]", dark ? "bg-[#0f1729] text-white" : "bg-white text-[#0f1729]")}>
+        {img && layout === "title" && (
+          <Illustration src={img} alt={`Slide ${i + 1} illustration`} className="absolute inset-y-0 right-0 w-[45%]" />
+        )}
+        {img && layout !== "title" && (
+          <Illustration src={img} alt={`Slide ${i + 1} illustration`} className="absolute top-[26%] right-[5%] aspect-video w-[30%] rounded-md" />
+        )}
         <div className="absolute top-[6%] left-[6%] h-1 w-12 rounded-full bg-[#6f9bff]" />
         {layout === "big_stat" ? (
           <div className="flex h-full flex-col justify-center">
@@ -325,7 +338,7 @@ function Presentation({ c }: { c: Content }) {
             </p>
           </div>
         ) : (
-          <div className="flex h-full flex-col justify-center">
+          <div className={cx("flex h-full flex-col justify-center", img && (layout === "title" ? "w-[50%]" : "w-[62%]"))}>
             <p className={cx("font-bold", layout === "title" ? "text-[clamp(18px,3.4vw,36px)]" : "text-[clamp(15px,2.4vw,26px)]")}>
               <T path={`slides[${i}].title`} text={str(s.title)} />
             </p>
@@ -378,7 +391,7 @@ function Presentation({ c }: { c: Content }) {
   );
 }
 
-function Video({ c }: { c: Content }) {
+function Video({ c, images }: { c: Content; images: Images }) {
   const scenes = arr(c.scenes).map(obj);
   return (
     <div>
@@ -393,8 +406,9 @@ function Video({ c }: { c: Content }) {
       </p>
       <div className="mt-4 space-y-2.5">
         {scenes.map((s, i) => (
-          <div key={i} className="grid gap-3 rounded-lg border border-border p-3 sm:grid-cols-[110px_1fr]">
+          <div key={i} className={cx("grid gap-3 rounded-lg border border-border p-3", images[`scene-${str(s.scene_number)}`] ? "sm:grid-cols-[220px_1fr]" : "sm:grid-cols-[110px_1fr]")}>
             <div>
+              <Illustration src={images[`scene-${str(s.scene_number)}`]} alt={`Scene ${str(s.scene_number)} frame`} className="mb-2 aspect-video rounded-md" />
               <p className="text-xs font-bold">Scene {str(s.scene_number)}</p>
               <p className="inline-flex items-center gap-1 text-2xs text-muted tabular-nums">
                 <Clock size={11} /> {str(s.start_sec)}–{str(s.end_sec)}s
@@ -429,21 +443,21 @@ function Video({ c }: { c: Content }) {
   );
 }
 
-export function ArtifactRenderer({ type, content, svgUrl }: { type: OutputType; content: Content; svgUrl: string }) {
+export function ArtifactRenderer({ type, content, svgUrl, images = {} }: { type: OutputType; content: Content; svgUrl: string; images?: Images }) {
   switch (type) {
     case "executive_summary":
       return <ExecutiveSummary c={content} />;
     case "advisory":
       return <Advisory c={content} />;
     case "linkedin":
-      return <LinkedIn c={content} />;
+      return <LinkedIn c={content} images={images} />;
     case "twitter":
       return <XThread c={content} />;
     case "infographic":
       return <Infographic c={content} svgUrl={svgUrl} />;
     case "presentation":
-      return <Presentation c={content} />;
+      return <Presentation c={content} images={images} />;
     case "video":
-      return <Video c={content} />;
+      return <Video c={content} images={images} />;
   }
 }

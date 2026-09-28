@@ -23,7 +23,7 @@ import re
 import shutil
 import time
 
-from . import config, evidence as ev, ledger, perception, prompts, quality, security, settings, verify
+from . import config, evidence as ev, imagegen, ledger, perception, prompts, quality, security, settings, verify
 from .catalog import BRIEF_SCHEMA, OUTPUT_TYPES, audience_text
 from .groq_engine import GroqEngine
 from .hf_engine import EngineError, HFEngine
@@ -206,7 +206,7 @@ def _new_artifact(otype: str) -> dict:
             "exports": meta["exports"], "status": "queued", "version": 0, "content": None, "released": None,
             "verification": None, "security": None, "red_team": None, "format_warnings": [],
             "approval": {"status": "pending", "by": None, "at": None, "comment": "", "history": []},
-            "output_hash": None, "versions": [], "stale": None, "error": None, "exported": []}
+            "output_hash": None, "versions": [], "stale": None, "error": None, "exported": [], "illustrations": []}
 
 
 def serialize(t: dict, full: bool = True) -> dict:
@@ -718,6 +718,74 @@ def _refresh_approval(t: dict, ap: dict | None = None) -> None:
         t["status"] = "running" if running else "awaiting_review"
     if any(a["status"] == "failed" for a in t["artifacts"].values()) and t["status"] == "awaiting_review":
         t["status"] = "partial"
+
+
+def _images_dir(tid: str, otype: str):
+    d = _dir(tid) / "images" / otype
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def illustration_path(tid: str, otype: str, slot: str):
+    return _dir(tid) / "images" / otype / f"{slot}.jpg"
+
+
+async def illustrate(t: dict, otype: str) -> None:
+    """Visual Agent: generate illustrative images for one artefact from its writer's visual briefs."""
+    a = t["artifacts"][otype]
+    domain = next((b.get("domain", "") for b in t["briefs"].values() if b.get("domain")), "")
+    plan = imagegen.slots(otype, a["content"] or {}, domain)
+    tk = _task(t, f"illustrate:{otype}", "Visual Agent", f"Illustrate {a['label']}", "generate",
+               "Generate illustrative images from the artefact's visual suggestions", "image_generation", [], artifact=otype)
+    _start(tk, f"0/{len(plan)} images")
+    tk["model"] = config.IMAGE_MODEL
+    save(t)
+    made, errors, fresh = [], [], []
+    for i, sl in enumerate(plan, 1):
+        director_input, removed = imagegen.art_brief(sl["brief"], sl["topic"])
+        try:
+            if LIVE:  # the art director turns the topic into a concrete, wordless photographic scene
+                scene, _ = await LIVE.generate_json(imagegen.ART_DIRECTOR, director_input, imagegen.SCENE_SCHEMA, 0.7)
+                prompt = imagegen.scene_prompt(scene.get("scene", ""))
+            else:
+                prompt, removed = imagegen.build_prompt(sl["brief"], sl["topic"])
+            img = await imagegen.generate(prompt, sl["aspect"])
+        except EngineError as e:
+            errors.append(str(e))
+            break
+        (_images_dir(t["id"], otype) / f"{sl['slot']}.jpg").write_bytes(img)
+        digest = ledger.canonical_hash(img.hex())
+        fresh.append({"slot": sl["slot"], "label": sl["label"], "brief": sl["brief"], "prompt": prompt, "removed": removed,
+                      "model": config.IMAGE_MODEL, "sha256": digest, "created_at": ledger.now(), "bytes": len(img)})
+        # the new set replaces the old one; slots that are no longer planned are removed
+        a["illustrations"] = fresh + [x for x in a.get("illustrations", [])
+                                      if x["slot"] not in {f["slot"] for f in fresh} and x["slot"] in {p["slot"] for p in plan}]
+        made.append({"slot": sl["slot"], "sha256": digest})
+        tk["progress"] = int(100 * i / max(len(plan), 1))
+        tk["detail"] = f"{i}/{len(plan)} images"
+        save(t)
+    if made:
+        keep = {x["slot"] for x in a["illustrations"]}
+        for f in _images_dir(t["id"], otype).glob("*.jpg"):
+            if f.stem not in keep:
+                f.unlink(missing_ok=True)
+        entry = ledger.record("illustration", t["id"], {"artifact": otype, "version": a["version"], "model": config.IMAGE_MODEL,
+                                                         "images": made})
+        t["provenance"]["ledger_entries"].append(entry["index"])
+        if a["approval"]["status"] == "approved":
+            a["approval"]["history"].append({k: a["approval"][k] for k in ("status", "by", "at", "comment")})
+            a["approval"].update(status="pending", by=None, at=None, comment="")
+            _derive(a)
+    if errors and not made:
+        _finish(tk, "failed", "Image generation failed", error=errors[0])
+    else:
+        _finish(tk, "completed", f"{len(made)} illustration(s)" + (f" · stopped: {errors[0][:60]}" if errors else ""))
+    ledger.audit("Illustrations generated" if made else "Illustration failed", a["label"], actor="Visual Agent", actor_type="agent",
+                 transformation_id=t["id"], status="success" if made and not errors else ("warning" if made else "failed"),
+                 detail=f"{len(made)} image(s) via {config.IMAGE_MODEL}; prompts scrubbed of sensitive data and figures"
+                        + (f"; {errors[0]}" if errors else ""))
+    _refresh_approval(t)
+    save(t)
 
 
 def reset_for_retry(t: dict) -> None:

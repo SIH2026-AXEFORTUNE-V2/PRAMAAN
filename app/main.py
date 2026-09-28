@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import config, exporters, ingest, ledger, orchestrator as orc, registry, settings
+from . import config, exporters, imagegen, ingest, ledger, orchestrator as orc, registry, settings
 from .catalog import OUTPUT_TYPES, PARAMETERS, normalise_params
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -171,6 +171,7 @@ async def get_config():
                           "exports": v["exports"]} for k, v in OUTPUT_TYPES.items()],
         "parameters": PARAMETERS,
         "operator": {"name": st["operator_name"], "role": st["operator_role"]},
+        "image_generation": {"available": imagegen.available(), "model": config.IMAGE_MODEL if imagegen.available() else None},
         "workspace": st["workspace_name"],
     }
 
@@ -516,6 +517,32 @@ async def approval(tid: str, otype: str, body: Decision):
     return orc.serialize(t)
 
 
+@app.post("/api/transformations/{tid}/artifacts/{otype}/illustrations")
+async def illustrate(tid: str, otype: str):
+    t = _t(tid)
+    a = _art(t, otype)
+    _idle(t)
+    if not imagegen.available():
+        raise HTTPException(409, "Image generation is not configured on this server.")
+    if not a["content"]:
+        raise HTTPException(409, "Generate the artefact first.")
+    if not imagegen.slots(otype, a["content"]):
+        raise HTTPException(400, f"{a['label']} has no visual suggestions to illustrate.")
+    orc.spawn(orc.illustrate(t, otype))
+    return {"accepted": True}
+
+
+@app.get("/api/transformations/{tid}/artifacts/{otype}/illustrations/{slot}.jpg")
+async def illustration(tid: str, otype: str, slot: str):
+    _art(_t(tid), otype)
+    if not re.fullmatch(r"[a-z]+-?\d*", slot):
+        raise HTTPException(404, "Not found")
+    p = orc.illustration_path(tid, otype, slot)
+    if not p.exists():
+        raise HTTPException(404, "Illustration not found")
+    return FileResponse(p, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=86400"})
+
+
 @app.get("/api/transformations/{tid}/artifacts/{otype}/versions/{version}")
 async def artifact_version(tid: str, otype: str, version: int):
     a = _art(_t(tid), otype)
@@ -523,6 +550,22 @@ async def artifact_version(tid: str, otype: str, version: int):
     if not v:
         raise HTTPException(404, "Version not found")
     return v
+
+
+def _image_files(tid: str, otype: str) -> dict[str, bytes]:
+    a = orc.T[tid]["artifacts"][otype]
+    out = {}
+    for ill in a.get("illustrations", []):
+        p = orc.illustration_path(tid, otype, ill["slot"])
+        if p.exists():
+            out[ill["slot"]] = p.read_bytes()
+    return out
+
+
+def _slide_images(tid: str, otype: str) -> dict[int, bytes]:
+    if otype != "presentation":
+        return {}
+    return {int(k.split("-")[1]): v for k, v in _image_files(tid, otype).items() if k.startswith("slide-")}
 
 
 def _footer(t: dict, a: dict) -> str:
@@ -547,7 +590,7 @@ async def export(tid: str, otype: str, fmt: str):
     if a["approval"]["status"] != "approved":
         raise HTTPException(403, "Export requires human approval of the current version.")
     try:
-        body = exporters.render(otype, fmt, a["released"], _footer(t, a))
+        body = exporters.render(otype, fmt, a["released"], _footer(t, a), _slide_images(tid, otype))
     except ValueError as e:
         raise HTTPException(400, str(e))
     orc.record_export(t, otype, fmt)
@@ -560,7 +603,7 @@ async def export_bundle(tid: str):
     t = _t(tid)
     if not any(a["approval"]["status"] == "approved" for a in t["artifacts"].values()):
         raise HTTPException(403, "Approve at least one artefact before exporting a bundle.")
-    data = exporters.bundle(t, lambda a: _footer(t, a))
+    data = exporters.bundle(t, lambda a: _footer(t, a), lambda o: _image_files(tid, o))
     ledger.audit("Bundle exported", tid, actor=settings.operator(), actor_type="user", transformation_id=tid)
     return Response(data, media_type="application/zip",
                     headers={"Content-Disposition": f'attachment; filename="{tid}-approved-bundle.zip"'})

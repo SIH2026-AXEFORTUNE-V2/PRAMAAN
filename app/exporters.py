@@ -167,7 +167,7 @@ def to_docx(otype: str, d: dict, footer_text: str = "") -> bytes:
 # ---------------------------------------------------------------------------
 
 
-def to_pptx(d: dict) -> bytes:
+def to_pptx(d: dict, images: dict[int, bytes] | None = None) -> bytes:
     from pptx import Presentation
     from pptx.dml.color import RGBColor
     from pptx.enum.shapes import MSO_SHAPE
@@ -219,13 +219,19 @@ def to_pptx(d: dict) -> bytes:
         bg(slide, BLACK if dark else WHITE)
         fg = WHITE if dark else INK
         label(slide, f"{d.get('title', '')[:60]}  ·  {idx:02d}", dark)
+        img = (images or {}).get(idx)
         if lay == "title":
+            tw = Inches(6.0) if img else Inches(11.5)
+            if img:
+                slide.shapes.add_picture(io.BytesIO(img), Inches(7.333), 0, Inches(6.0), H)
+                text(slide, Inches(7.5), H - Inches(0.55), Inches(5.6), Inches(0.3), "AI-generated illustration", 9,
+                     RGBColor(0xD1, 0xD5, 0xDB))
             bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.7), Inches(2.4), Inches(1.2), Emu(60000))
             bar.fill.solid()
             bar.fill.fore_color.rgb = ACCENT
             bar.line.fill.background()
-            text(slide, Inches(0.7), Inches(2.6), Inches(11.5), Inches(2.2), s["title"], 48, WHITE, bold=True, font="Georgia")
-            text(slide, Inches(0.7), Inches(4.9), Inches(11), Inches(1), d.get("subtitle", ""), 22, RGBColor(0xD1, 0xD5, 0xDB))
+            text(slide, Inches(0.7), Inches(2.6), tw, Inches(2.2), s["title"], 44 if img else 48, WHITE, bold=True, font="Georgia")
+            text(slide, Inches(0.7), Inches(4.9), tw, Inches(1), d.get("subtitle", ""), 22, RGBColor(0xD1, 0xD5, 0xDB))
         elif lay == "big_stat":
             text(slide, Inches(0.7), Inches(1.3), Inches(12), Inches(1), s["title"], 30, WHITE, bold=True, font="Georgia")
             text(slide, Inches(0.7), Inches(2.5), Inches(12), Inches(2.4), s.get("stat_value") or "", 110, ACCENT, bold=True, italic=True)
@@ -240,7 +246,10 @@ def to_pptx(d: dict) -> bytes:
                 bullet_box(slide, Inches(6.9), Inches(2.5), Inches(5.8), Inches(4.2), s.get("right_bullets", []), fg)
             else:
                 bullet_box(slide, Inches(0.7), Inches(2.5), Inches(8.2), Inches(4.3), s.get("bullets", []), fg)
-                if s.get("visual_suggestion") and lay != "closing":
+                if img:
+                    slide.shapes.add_picture(io.BytesIO(img), Inches(9.3), Inches(2.5), Inches(3.4), Inches(3.4 * 9 / 16))
+                    text(slide, Inches(9.3), Inches(2.5 + 3.4 * 9 / 16 + 0.05), Inches(3.4), Inches(0.3), "AI-generated illustration", 9, MUTED)
+                elif s.get("visual_suggestion") and lay != "closing":
                     card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(9.3), Inches(2.5), Inches(3.4), Inches(3.6))
                     card.fill.solid()
                     card.fill.fore_color.rgb = RGBColor(0xF6, 0xF7, 0xF9) if not dark else RGBColor(0x1F, 0x20, 0x23)
@@ -394,7 +403,7 @@ MIME = {
 }
 
 
-def render(otype: str, fmt: str, d: dict, provenance: str = "") -> bytes:
+def render(otype: str, fmt: str, d: dict, provenance: str = "", images: dict[int, bytes] | None = None) -> bytes:
     """provenance: one-line lineage footer (transformation, version, output hash, approval) added to text formats."""
     tail = f"\n\n---\n{provenance}\n" if provenance else ""
     if fmt == "md":
@@ -410,11 +419,11 @@ def render(otype: str, fmt: str, d: dict, provenance: str = "") -> bytes:
     if fmt == "docx":
         return to_docx(otype, d, provenance)
     if fmt == "pptx" and otype == "presentation":
-        return to_pptx(d)
+        return to_pptx(d, images)
     raise ValueError(f"Format '{fmt}' is not available for {otype}.")
 
 
-def bundle(t: dict, footer) -> bytes:
+def bundle(t: dict, footer, image_files=None) -> bytes:
     """Approved artefacts (released versions) + evidence ledger + provenance manifest."""
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
@@ -425,11 +434,15 @@ def bundle(t: dict, footer) -> bytes:
                 continue
             manifest["artifacts"][otype] = {"version": a["version"], "output_hash": a["output_hash"],
                                             "approved_by": a["approval"]["by"], "approved_at": a["approval"]["at"]}
+            files = image_files(otype) if image_files else {}
+            slide_imgs = {int(k.split("-")[1]): v for k, v in files.items() if k.startswith("slide-")}
             for fmt in OUTPUT_TYPES[otype]["exports"]:
                 try:
-                    z.writestr(f"{otype}/{otype}.{fmt}", render(otype, fmt, a["released"], footer(a)))
+                    z.writestr(f"{otype}/{otype}.{fmt}", render(otype, fmt, a["released"], footer(a), slide_imgs))
                 except ValueError:
                     pass
+            for slot, data in files.items():
+                z.writestr(f"{otype}/illustrations/{slot}.jpg", data)
         z.writestr("evidence_ledger.json", json.dumps(
             [{k: c[k] for k in ("claim_id", "label", "display_value", "modality", "source_name", "page", "status", "version")}
              for c in t["claims"]], indent=2, ensure_ascii=False))

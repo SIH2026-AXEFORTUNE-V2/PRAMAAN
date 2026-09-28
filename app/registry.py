@@ -28,6 +28,9 @@ AGENTS = [
      "inputs": ["Claim ledger", "Contract"], "outputs": ["Infographic"], "kind": "specialist"},
     {"name": "Video Package Agent", "role": "Script, storyboard, narration and subtitles.", "capability": "text_reasoning",
      "inputs": ["Claim ledger", "Contract"], "outputs": ["Video Package"], "kind": "specialist"},
+    {"name": "Visual Agent", "role": "Generates illustrative images from writers' visual suggestions. Prompts are scrubbed of "
+     "sensitive data and figures; images are labelled and never treated as evidence.", "capability": "image_generation",
+     "inputs": ["Visual suggestions"], "outputs": ["Illustrations"], "kind": "specialist"},
     {"name": "Translation Agent", "role": "Language-constrained generation: specialist agents write natively in the contract "
      "language while facts stay locked to the English evidence ledger.", "capability": "translation",
      "inputs": ["Contract language"], "outputs": ["Localised artefacts"], "kind": "specialist"},
@@ -64,6 +67,9 @@ def model_router(live) -> list[dict]:
             r("policy_engine", "Security policy engine", ["PRAMAAN rules"], "active", "Local", "Deterministic detectors."),
             r("deterministic_verifier", "Verification", ["PRAMAAN verifier"], "active", "Local", "Deterministic checks."),
             r("hash_chain", "Provenance", ["SHA-256 hash chain"], "active", "Local"),
+            r("image_generation", "Illustrations (Visual Agent)", [config.IMAGE_MODEL] if config.CLOUDFLARE_API_TOKEN else [],
+              "active" if config.CLOUDFLARE_API_TOKEN else "not_configured",
+              "Cloudflare Workers AI" if config.CLOUDFLARE_API_TOKEN else "—", "Illustrative only; never used as evidence."),
             r("embedding", "Embeddings (retrieval)", [], "not_configured", "—", "Not needed for single-source transformation."),
         ]
 
