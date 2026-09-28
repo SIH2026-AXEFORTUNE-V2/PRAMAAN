@@ -396,6 +396,7 @@ def to_svg(d: dict) -> str:
 # Dispatch + bundle
 # ---------------------------------------------------------------------------
 MIME = {
+    "mp4": "video/mp4",
     "md": "text/markdown; charset=utf-8", "txt": "text/plain; charset=utf-8", "json": "application/json",
     "srt": "application/x-subrip", "svg": "image/svg+xml",
     "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -423,7 +424,7 @@ def render(otype: str, fmt: str, d: dict, provenance: str = "", images: dict[int
     raise ValueError(f"Format '{fmt}' is not available for {otype}.")
 
 
-def bundle(t: dict, footer, image_files=None) -> bytes:
+def bundle(t: dict, footer, image_files=None, attachments=None) -> bytes:
     """Approved artefacts (released versions) + evidence ledger + provenance manifest."""
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
@@ -443,6 +444,8 @@ def bundle(t: dict, footer, image_files=None) -> bytes:
                     pass
             for slot, data in files.items():
                 z.writestr(f"{otype}/illustrations/{slot}.jpg", data)
+            for name, data in (attachments(otype) if attachments else {}).items():
+                z.writestr(name, data)
         z.writestr("evidence_ledger.json", json.dumps(
             [{k: c[k] for k in ("claim_id", "label", "display_value", "modality", "source_name", "page", "status", "version")}
              for c in t["claims"]], indent=2, ensure_ascii=False))

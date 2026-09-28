@@ -48,6 +48,13 @@ CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID", "").strip()
 CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "").strip()
 IMAGE_MODEL = os.getenv("IMAGE_MODEL", "@cf/black-forest-labs/flux-1-schnell").strip()
 
+# Video production: Cloudflare Aura-2 narration; optional real motion clips via Pollinations (Nova Reel).
+TTS_MODEL = os.getenv("TTS_MODEL", "@cf/deepgram/aura-2-en").strip()
+TTS_VOICE = os.getenv("TTS_VOICE", "").strip()
+POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY", "").strip()
+VIDEO_MODEL = os.getenv("VIDEO_MODEL", "amazon/nova-reel-v1").strip()
+VIDEO_TIMEOUT_S = int(os.getenv("VIDEO_TIMEOUT_S", "240"))
+
 # Which text engine to use: auto (Groq > self-hosted gateway > Hugging Face), or force one.
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "auto").strip().lower()
 if LLM_PROVIDER == "auto":

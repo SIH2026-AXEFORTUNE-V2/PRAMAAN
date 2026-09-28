@@ -23,7 +23,7 @@ import re
 import shutil
 import time
 
-from . import config, evidence as ev, imagegen, ledger, perception, prompts, quality, security, settings, verify
+from . import config, evidence as ev, imagegen, ledger, perception, prompts, quality, security, settings, verify, videogen
 from .catalog import BRIEF_SCHEMA, OUTPUT_TYPES, audience_text
 from .groq_engine import GroqEngine
 from .hf_engine import EngineError, HFEngine
@@ -784,6 +784,128 @@ async def illustrate(t: dict, otype: str) -> None:
                  transformation_id=t["id"], status="success" if made and not errors else ("warning" if made else "failed"),
                  detail=f"{len(made)} image(s) via {config.IMAGE_MODEL}; prompts scrubbed of sensitive data and figures"
                         + (f"; {errors[0]}" if errors else ""))
+    _refresh_approval(t)
+    save(t)
+
+
+def video_path(tid: str):
+    return _dir(tid) / "video" / "pramaan-video.mp4"
+
+
+def narration_issues(t: dict) -> list[str]:
+    """Spoken lines must be verified: drift, unsupported or over-certain narration blocks rendering."""
+    a = t["artifacts"].get("video") or {}
+    refs = (a.get("verification") or {}).get("refs", [])
+    return [r["sentence"] for r in refs if "narration" in r["path"] and r["status"] in ("drift", "unsupported", "uncertainty")]
+
+
+async def render_video(t: dict) -> None:
+    """Video Production Agent: one narrated, subtitled MP4 from the verified, released video package."""
+    import hashlib
+    a = t["artifacts"]["video"]
+    content = a["released"] or a["content"] or {}
+    scenes = [s for s in content.get("scenes", []) if (s.get("narration") or "").strip()]
+    tk = _task(t, "render:video", "Video Production Agent", "Render narrated MP4", "generate",
+               "Motion clips or animated stills, verified narration, subtitles, stitched into one MP4",
+               "video_production", [], artifact="video")
+    _start(tk, f"Preparing {len(scenes)} scenes")
+    tk["model"] = config.TTS_MODEL + (f" + {config.VIDEO_MODEL}" if videogen.motion_available() else "")
+    save(t)
+    base = _dir(t["id"]) / "video"
+    work = base / "work"
+    if work.exists():
+        shutil.rmtree(work)
+    work.mkdir(parents=True)
+    videogen.watermark(work / "watermark.png")
+    domain = next((b.get("domain", "") for b in t["briefs"].values() if b.get("domain")), "")
+    stills = {x["slot"]: x for x in a.get("illustrations", [])}
+    sem = asyncio.Semaphore(3)
+    done = 0
+
+    async def prep(i: int, s: dict) -> dict:
+        nonlocal done
+        async with sem:
+            n = s.get("scene_number", i + 1)
+            spoken = videogen.speakable(s["narration"])
+            audio = work / f"audio-{i:02d}.mp3"
+            audio.write_bytes(await videogen.narrate(spoken))
+            director_input, _ = imagegen.art_brief(s.get("visual_description", ""), f"{domain}: {s.get('title', '')}")
+            prompt = ""
+            if LIVE:
+                try:
+                    scene, _ = await LIVE.generate_json(imagegen.ART_DIRECTOR, director_input, imagegen.SCENE_SCHEMA, 0.7)
+                    prompt = imagegen.scene_prompt(scene.get("scene", ""))
+                except EngineError:
+                    prompt = ""
+            if not prompt:
+                prompt = imagegen.build_prompt(s.get("visual_description", ""), f"{domain}: {s.get('title', '')}")[0]
+            source = "still"
+            visual = work / f"visual-{i:02d}.jpg"
+            clip = await videogen.motion_clip(prompt + " Slow, steady cinematic camera movement.")
+            if clip:
+                visual = work / f"visual-{i:02d}.mp4"
+                visual.write_bytes(clip)
+                source = "motion"
+            elif f"scene-{n}" in stills and illustration_path(t["id"], "video", f"scene-{n}").exists():
+                shutil.copy(illustration_path(t["id"], "video", f"scene-{n}"), visual)
+            elif imagegen.available():
+                try:
+                    visual.write_bytes(await imagegen.generate(prompt, 16 / 9))
+                except EngineError:
+                    videogen.title_still(s.get("title", ""), visual)
+                    source = "title card"
+            else:
+                videogen.title_still(s.get("title", ""), visual)
+                source = "title card"
+            done += 1
+            tk["progress"] = int(5 + 45 * done / len(scenes))
+            tk["detail"] = f"Scenes prepared {done}/{len(scenes)}"
+            return {"i": i, "scene": n, "title": s.get("title", ""), "spoken": spoken, "audio": audio, "visual": visual,
+                    "source": source, "prompt": prompt}
+
+    try:
+        if not scenes:
+            raise EngineError("The video package has no narrated scenes.")
+        prepared = sorted(await asyncio.gather(*(prep(i, s) for i, s in enumerate(scenes))), key=lambda x: x["i"])
+        segments = []
+        for k, p in enumerate(prepared, 1):
+            tk["detail"] = f"Encoding scene {k}/{len(prepared)}"
+            segments.append(await asyncio.to_thread(videogen.render_segment, work, p["i"], p["visual"],
+                                                    p["source"] == "motion", p["audio"], p["spoken"]))
+            tk["progress"] = int(50 + 45 * k / len(prepared))
+        tk["detail"] = "Joining scenes"
+        out = video_path(t["id"])
+        length = await asyncio.to_thread(videogen.stitch, work, segments, work / "final.mp4")
+        shutil.move(str(work / "final.mp4"), out)
+        data = out.read_bytes()
+        digest = hashlib.sha256(data).hexdigest()
+        a["video_render"] = {
+            "sha256": digest, "bytes": len(data), "seconds": round(length, 1), "created_at": ledger.now(),
+            "artifact_version": a["version"], "resolution": f"{videogen.W}x{videogen.H}",
+            "models": {"narration": config.TTS_MODEL, "motion": config.VIDEO_MODEL if videogen.motion_available() else None,
+                       "stills": config.IMAGE_MODEL if imagegen.available() else None},
+            "scenes": [{"scene": p["scene"], "title": p["title"], "source": p["source"], "prompt": p["prompt"]} for p in prepared],
+        }
+        shutil.rmtree(work, ignore_errors=True)
+        entry = ledger.record("video_render", t["id"], {"artifact": "video", "version": a["version"], "sha256": digest,
+                                                        "seconds": a["video_render"]["seconds"],
+                                                        "models": a["video_render"]["models"],
+                                                        "scene_sources": [p["source"] for p in prepared]})
+        t["provenance"]["ledger_entries"].append(entry["index"])
+        if a["approval"]["status"] == "approved":
+            a["approval"]["history"].append({k: a["approval"][k] for k in ("status", "by", "at", "comment")})
+            a["approval"].update(status="pending", by=None, at=None, comment="")
+            _derive(a)
+        motion = sum(1 for p in prepared if p["source"] == "motion")
+        _finish(tk, "completed", f"{length:.0f}s MP4 · {motion}/{len(prepared)} motion scenes")
+        ledger.audit("Video rendered", f"Video Package v{a['version']}", actor="Video Production Agent", actor_type="agent",
+                     transformation_id=t["id"], detail=f"{length:.0f}s, {motion} motion / {len(prepared) - motion} still scenes; "
+                                                       f"narration {config.TTS_MODEL}")
+    except Exception as e:  # noqa: BLE001 - any failure is reported on the task, the rest of the run is untouched
+        log.exception("video render failed")
+        _finish(tk, "failed", "Video render failed", error=str(e)[:300])
+        ledger.audit("Video render failed", "Video Package", actor="Video Production Agent", actor_type="agent",
+                     transformation_id=t["id"], status="failed", detail=str(e)[:300])
     _refresh_approval(t)
     save(t)
 

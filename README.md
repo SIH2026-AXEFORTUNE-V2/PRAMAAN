@@ -45,6 +45,7 @@ Development (hot reload): `uvicorn app.main:app --reload --port 8000` and `cd we
 |---|---|
 | `GROQ_API_KEY` | **Recommended.** GroqCloud key: text agents run on `openai/gpt-oss-120b` (overflow to `gpt-oss-20b`), speech on Whisper. Free tier ≈1,000 requests/day and 8k tokens/min per model; the engine honours retry-after and overflows between models. |
 | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | Enables the **Visual Agent**: illustrations for LinkedIn, Presentation and Video artefacts via Workers AI FLUX.1 [schnell]. An art-director step turns each slide topic into a wordless photographic scene; prompts are scrubbed of sensitive data and figures; images are labelled, hashed into the ledger and embedded in PPTX exports. |
+| `POLLINATIONS_API_KEY` | Optional. **Video Production Agent** renders the Video Package to one MP4: Aura-2 narration of the verified, released script (Cloudflare), burned-in subtitles, an "AI-generated video" mark, and per-scene visuals. With this key each scene is a real Nova Reel motion clip; without it, or if a clip fails, the scene is an animated FLUX still. Rendering is refused while any narration line fails verification; MP4 export requires approval. |
 | `HF_TOKEN` | Hugging Face token with *Make calls to Inference Providers*. Free accounts have a small monthly credit; HTTP 402 means it is used up. |
 | `HF_TEXT_MODEL` | Comma-separated text models, tried in order |
 | `HF_VISION_MODEL`, `HF_ASR_MODEL` | Perception for images/scans/video and speech |

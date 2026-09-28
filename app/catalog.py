@@ -207,7 +207,7 @@ OUTPUT_TYPES: dict[str, dict] = {
         "icon": "video",
         "description": "Script, storyboard, scenes, narration, subtitles and visual direction.",
         "schema": VIDEO_SCHEMA,
-        "exports": ["md", "srt", "json"],
+        "exports": ["mp4", "md", "srt", "json"],
         "spec": (
             "Produce a complete, production-ready VIDEO PACKAGE for a {video_duration}-second video.\n"
             "- 4 to 8 scenes that are contiguous: the first starts at 0, each starts where the previous ended, the last ends at {video_duration}.\n"

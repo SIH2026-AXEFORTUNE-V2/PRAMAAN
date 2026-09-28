@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { ChevronLeft, Eye, FlaskConical, History, ImagePlus, MoreHorizontal, Pencil, RefreshCcw, ShieldCheck, Sparkles, TriangleAlert } from "lucide-react";
+import { ChevronLeft, Eye, Film, FlaskConical, History, ImagePlus, MoreHorizontal, Pencil, RefreshCcw, ShieldCheck, Sparkles, TriangleAlert } from "lucide-react";
 import { api } from "@/lib/api";
 import { cx, dateTime } from "@/lib/format";
 import { OutputIcon } from "@/lib/outputs";
@@ -47,6 +47,8 @@ export function ArtifactPage() {
   const regen = useAction(api.regenerate, { success: "Regenerating this artefact only" });
   const illustrate = useAction(api.illustrate, { success: "Visual Agent is generating illustrations" });
   const imageGen = useApp((s) => s.config?.image_generation);
+  const videoProd = useApp((s) => s.config?.video_production);
+  const renderVideo = useAction(api.renderVideo, { success: "Rendering the MP4: narration, visuals and subtitles" });
   const drift = useAction(api.simulateDrift, { errorTitle: "Could not inject test conflict" });
 
   useEffect(() => setOldVersion(null), [a?.version]);
@@ -104,6 +106,24 @@ export function ArtifactPage() {
             <Button size="sm" icon={<Pencil size={13} />} onClick={() => setEdit(!editing)} disabled={busy || !a.content}>
               Edit
             </Button>
+            {otype === "video" && (
+              <Button
+                size="sm"
+                icon={<Film size={14} />}
+                disabled={busy || !a.content || !videoProd?.available}
+                loading={renderVideo.pending}
+                title={
+                  videoProd?.available
+                    ? `Narrated MP4 with ${videoProd.motion ? "motion clips" : "animated stills"}`
+                    : "Video production is not configured on this server"
+                }
+                onClick={async () => {
+                  if (await renderVideo.run(t.id)) await refresh();
+                }}
+              >
+                {a.video_render ? "Re-render MP4" : "Render MP4"}
+              </Button>
+            )}
             {ILLUSTRATABLE.includes(otype) && (
               <Button
                 size="sm"
@@ -212,6 +232,11 @@ export function ArtifactPage() {
                     content={content}
                     svgUrl={api.previewSvgUrl(t.id, otype, a.version, view === "released")}
                     images={oldVersion ? {} : Object.fromEntries((a.illustrations ?? []).map((x) => [x.slot, api.illustrationUrl(t.id, otype, x.slot, x.sha256)]))}
+                    video={
+                      otype === "video" && a.video_render && !oldVersion && view === "draft"
+                        ? { src: api.videoUrl(t.id, a.video_render.sha256), render: a.video_render, stale: a.video_render.artifact_version !== a.version }
+                        : undefined
+                    }
                   />
                 </TraceProvider>
               )}

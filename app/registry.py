@@ -31,6 +31,9 @@ AGENTS = [
     {"name": "Visual Agent", "role": "Generates illustrative images from writers' visual suggestions. Prompts are scrubbed of "
      "sensitive data and figures; images are labelled and never treated as evidence.", "capability": "image_generation",
      "inputs": ["Visual suggestions"], "outputs": ["Illustrations"], "kind": "specialist"},
+    {"name": "Video Production Agent", "role": "Renders the verified video package into one MP4: motion clips or animated "
+     "stills, Aura-2 narration of the released script, burned-in subtitles and an AI-generated mark.",
+     "capability": "video_production", "inputs": ["Video package", "Illustrations"], "outputs": ["MP4"], "kind": "specialist"},
     {"name": "Translation Agent", "role": "Language-constrained generation: specialist agents write natively in the contract "
      "language while facts stay locked to the English evidence ledger.", "capability": "translation",
      "inputs": ["Contract language"], "outputs": ["Localised artefacts"], "kind": "specialist"},
@@ -70,6 +73,12 @@ def model_router(live) -> list[dict]:
             r("image_generation", "Illustrations (Visual Agent)", [config.IMAGE_MODEL] if config.CLOUDFLARE_API_TOKEN else [],
               "active" if config.CLOUDFLARE_API_TOKEN else "not_configured",
               "Cloudflare Workers AI" if config.CLOUDFLARE_API_TOKEN else "—", "Illustrative only; never used as evidence."),
+            r("text_to_speech", "Narration (text-to-speech)", [config.TTS_MODEL] if config.CLOUDFLARE_API_TOKEN else [],
+              "active" if config.CLOUDFLARE_API_TOKEN else "not_configured", "Cloudflare Workers AI" if config.CLOUDFLARE_API_TOKEN else "—",
+              "Reads only the verified, released video script."),
+            r("video_generation", "Motion video clips", [config.VIDEO_MODEL] if config.POLLINATIONS_API_KEY else [],
+              "active" if config.POLLINATIONS_API_KEY else "not_configured", "Pollinations" if config.POLLINATIONS_API_KEY else "—",
+              "Without it, scenes use animated stills; the MP4 still renders."),
             r("embedding", "Embeddings (retrieval)", [], "not_configured", "—", "Not needed for single-source transformation."),
         ]
 

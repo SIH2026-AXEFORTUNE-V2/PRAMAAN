@@ -124,6 +124,8 @@ export const api = {
     ),
   decide: (id: string, o: OutputType, decision: "approve" | "reject" | "request_changes", comment: string) =>
     request<Transformation>(`${T(id)}/artifacts/${o}/approval`, json("POST", { decision, comment })),
+  renderVideo: (id: string) => request<{ accepted: boolean }>(`${T(id)}/artifacts/video/render`, { method: "POST" }),
+  videoUrl: (id: string, sha: string) => `${T(id)}/artifacts/video/video.mp4?h=${sha.slice(0, 12)}`,
   illustrate: (id: string, o: OutputType) => request<{ accepted: boolean }>(`${T(id)}/artifacts/${o}/illustrations`, { method: "POST" }),
   illustrationUrl: (id: string, o: OutputType, slot: string, sha: string) => `${T(id)}/artifacts/${o}/illustrations/${slot}.jpg?h=${sha.slice(0, 12)}`,
   version: (id: string, o: OutputType, v: number) =>

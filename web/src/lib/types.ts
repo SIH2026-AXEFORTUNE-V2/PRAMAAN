@@ -71,6 +71,7 @@ export interface AppConfig {
   operator: { name: string; role: string };
   workspace: string;
   image_generation: { available: boolean; model: string | null };
+  video_production: { available: boolean; motion: boolean; narration_model: string; motion_model: string | null };
 }
 
 export interface SourceInfo {
@@ -273,6 +274,18 @@ export interface Artifact {
   error: string | null;
   exported: { version: number; format: string; at: string; by: string }[];
   illustrations?: Illustration[];
+  video_render?: VideoRender;
+}
+
+export interface VideoRender {
+  sha256: string;
+  bytes: number;
+  seconds: number;
+  created_at: string;
+  artifact_version: number;
+  resolution: string;
+  models: { narration: string; motion: string | null; stills: string | null };
+  scenes: { scene: number; title: string; source: "motion" | "still" | "title card"; prompt: string }[];
 }
 
 export interface ConsistencyConflict {

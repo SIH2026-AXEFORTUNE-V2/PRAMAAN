@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import config, exporters, imagegen, ingest, ledger, orchestrator as orc, registry, settings
+from . import config, exporters, imagegen, ingest, ledger, orchestrator as orc, registry, settings, videogen
 from .catalog import OUTPUT_TYPES, PARAMETERS, normalise_params
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -172,6 +172,8 @@ async def get_config():
         "parameters": PARAMETERS,
         "operator": {"name": st["operator_name"], "role": st["operator_role"]},
         "image_generation": {"available": imagegen.available(), "model": config.IMAGE_MODEL if imagegen.available() else None},
+        "video_production": {"available": videogen.tts_available(), "motion": videogen.motion_available(),
+                             "narration_model": config.TTS_MODEL, "motion_model": config.VIDEO_MODEL if videogen.motion_available() else None},
         "workspace": st["workspace_name"],
     }
 
@@ -532,6 +534,31 @@ async def illustrate(tid: str, otype: str):
     return {"accepted": True}
 
 
+@app.post("/api/transformations/{tid}/artifacts/video/render")
+async def render_video(tid: str):
+    t = _t(tid)
+    a = _art(t, "video")
+    _idle(t)
+    if not videogen.tts_available():
+        raise HTTPException(409, "Video production needs Cloudflare Workers AI (CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_API_TOKEN).")
+    if not a["content"]:
+        raise HTTPException(409, "Generate the video package first.")
+    issues = orc.narration_issues(t)
+    if issues:
+        raise HTTPException(409, f"{len(issues)} narration line(s) failed verification. Repair them first so nothing false is spoken.")
+    orc.spawn(orc.render_video(t))
+    return {"accepted": True}
+
+
+@app.get("/api/transformations/{tid}/artifacts/video/video.mp4")
+async def video_preview(tid: str):
+    _art(_t(tid), "video")
+    p = orc.video_path(tid)
+    if not p.exists():
+        raise HTTPException(404, "No rendered video yet")
+    return FileResponse(p, media_type="video/mp4", headers={"Cache-Control": "private, no-cache"})
+
+
 @app.get("/api/transformations/{tid}/artifacts/{otype}/illustrations/{slot}.jpg")
 async def illustration(tid: str, otype: str, slot: str):
     _art(_t(tid), otype)
@@ -589,6 +616,12 @@ async def export(tid: str, otype: str, fmt: str):
     a = _art(t, otype)
     if a["approval"]["status"] != "approved":
         raise HTTPException(403, "Export requires human approval of the current version.")
+    if fmt == "mp4":
+        p = orc.video_path(tid)
+        if otype != "video" or not p.exists():
+            raise HTTPException(404, "Render the video first.")
+        orc.record_export(t, otype, fmt)
+        return FileResponse(p, media_type="video/mp4", filename=exporters.filename(t, otype, fmt))
     try:
         body = exporters.render(otype, fmt, a["released"], _footer(t, a), _slide_images(tid, otype))
     except ValueError as e:
@@ -603,7 +636,9 @@ async def export_bundle(tid: str):
     t = _t(tid)
     if not any(a["approval"]["status"] == "approved" for a in t["artifacts"].values()):
         raise HTTPException(403, "Approve at least one artefact before exporting a bundle.")
-    data = exporters.bundle(t, lambda a: _footer(t, a), lambda o: _image_files(tid, o))
+    data = exporters.bundle(t, lambda a: _footer(t, a), lambda o: _image_files(tid, o),
+                            lambda o: {"video/pramaan-video.mp4": orc.video_path(tid).read_bytes()}
+                            if o == "video" and orc.video_path(tid).exists() else {})
     ledger.audit("Bundle exported", tid, actor=settings.operator(), actor_type="user", transformation_id=tid)
     return Response(data, media_type="application/zip",
                     headers={"Content-Disposition": f'attachment; filename="{tid}-approved-bundle.zip"'})

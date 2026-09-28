@@ -5,6 +5,8 @@ import { cx } from "@/lib/format";
 import type { Content, OutputType } from "@/lib/types";
 import { T } from "../evidence/ClaimText";
 import { Illustration } from "./Illustration";
+import { VideoPlayer } from "./VideoPlayer";
+import type { VideoRender } from "@/lib/types";
 
 type Images = Record<string, string>;
 
@@ -391,10 +393,11 @@ function Presentation({ c, images }: { c: Content; images: Images }) {
   );
 }
 
-function Video({ c, images }: { c: Content; images: Images }) {
+function Video({ c, images, video }: { c: Content; images: Images; video?: { src: string; render: VideoRender; stale: boolean } }) {
   const scenes = arr(c.scenes).map(obj);
   return (
     <div>
+      {video && <VideoPlayer {...video} />}
       <h2 className="text-xl font-bold">
         <T path="title" text={str(c.title)} />
       </h2>
@@ -443,7 +446,19 @@ function Video({ c, images }: { c: Content; images: Images }) {
   );
 }
 
-export function ArtifactRenderer({ type, content, svgUrl, images = {} }: { type: OutputType; content: Content; svgUrl: string; images?: Images }) {
+export function ArtifactRenderer({
+  type,
+  content,
+  svgUrl,
+  images = {},
+  video,
+}: {
+  type: OutputType;
+  content: Content;
+  svgUrl: string;
+  images?: Images;
+  video?: { src: string; render: VideoRender; stale: boolean };
+}) {
   switch (type) {
     case "executive_summary":
       return <ExecutiveSummary c={content} />;
@@ -458,6 +473,6 @@ export function ArtifactRenderer({ type, content, svgUrl, images = {} }: { type:
     case "presentation":
       return <Presentation c={content} images={images} />;
     case "video":
-      return <Video c={content} images={images} />;
+      return <Video c={content} images={images} video={video} />;
   }
 }
