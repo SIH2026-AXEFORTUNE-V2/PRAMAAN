@@ -62,24 +62,50 @@ async def narrate(text: str) -> bytes:
                 return r.content
             if r.status_code in (401, 403):
                 raise EngineError("Cloudflare rejected the token for text-to-speech.")
+            if quota_exhausted(r):
+                raise EngineError(QUOTA_MSG)
             await asyncio.sleep(2 * (attempt + 1))
     raise EngineError(f"Narration failed: HTTP {r.status_code} {r.text[:120]}")
 
 
-async def motion_clip(prompt: str) -> bytes | None:
-    """One Nova Reel clip via Pollinations. Returns None on any failure so the scene falls back to a still."""
+QUOTA_MSG = "Cloudflare Workers AI daily free allowance is used up (resets 00:00 UTC)"
+
+
+def quota_exhausted(r: httpx.Response) -> bool:
+    return r.status_code == 429 and "daily free allocation" in r.text
+
+
+def silence(seconds: float, path: Path) -> None:
+    """Silent narration track, used when text-to-speech is unavailable, so the video still renders."""
+    cmd = [_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+           "-t", f"{seconds:.2f}", "-c:a", "libmp3lame", "-b:a", "64k", str(path)]
+    subprocess.run(cmd, check=True, capture_output=True)
+
+
+def reading_seconds(text: str) -> float:
+    return max(3.0, len(text.split()) / 2.4)  # comfortable subtitle reading pace
+
+
+async def motion_clip(prompt: str) -> tuple[bytes | None, str | None]:
+    """One motion clip via Pollinations. Returns (clip, None) or (None, reason) so the scene can fall back to a still."""
     if not motion_available():
-        return None
+        return None, "no motion model configured"
     url = f"https://gen.pollinations.ai/image/{urllib.parse.quote(prompt[:400])}"
-    params = {"model": config.VIDEO_MODEL, "duration": "6", "nologo": "true"}
+    params = {"model": config.VIDEO_MODEL, "duration": str(config.VIDEO_CLIP_SECONDS), "nologo": "true"}
     try:
         async with httpx.AsyncClient(timeout=config.VIDEO_TIMEOUT_S) as client:
             r = await client.get(url, params=params, headers={"Authorization": f"Bearer {config.POLLINATIONS_API_KEY}"})
-        if r.status_code == 200 and r.headers.get("content-type", "").startswith("video/") and len(r.content) > 10_000:
-            return r.content
-    except httpx.HTTPError:
-        pass
-    return None
+    except httpx.HTTPError as e:
+        return None, f"motion request failed ({type(e).__name__})"
+    if r.status_code == 200 and r.headers.get("content-type", "").startswith("video/") and len(r.content) > 10_000:
+        return r.content, None
+    try:
+        msg = r.json().get("error", {}).get("message", "")
+    except ValueError:
+        msg = r.text[:160]
+    if r.status_code == 402:
+        return None, "insufficient Pollinations balance: " + msg.split(". Top up")[0]
+    return None, f"HTTP {r.status_code}: {msg[:160]}"
 
 
 def duration(path: Path) -> float:
@@ -161,11 +187,17 @@ def render_segment(work: Path, idx: int, visual: Path, is_clip: bool, audio: Pat
     seg_len = max(speech + PAD, 3.5)
     frames = int(seg_len * FPS) + 1
     caps = chunks(narration, speech)
-    inputs = ["-i", str(visual)] if not is_clip else ["-stream_loop", "-1", "-i", str(visual)]
+    stretch = 1.0
+    if is_clip:
+        clip_len = duration(visual) or float(config.VIDEO_CLIP_SECONDS)
+        stretch = seg_len / clip_len
+    looped = is_clip and stretch > 2.5  # slow the clip down to fit the narration; loop only if that would look unnatural
+    inputs = ["-i", str(visual)] if not looped else ["-stream_loop", "-1", "-i", str(visual)]
     inputs += ["-i", str(audio), "-i", str(work / "watermark.png")]
     fc = []
     if is_clip:
-        fc.append(f"[0:v]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS},format=yuv420p[base]")
+        speed = "" if looped or stretch <= 1 else f"setpts={stretch:.3f}*PTS,"
+        fc.append(f"[0:v]{speed}scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS},format=yuv420p[base]")
     else:
         zoom_step = round(0.10 / frames, 6)
         fc.append(f"[0:v]scale={W * 2}:{H * 2}:force_original_aspect_ratio=increase,crop={W * 2}:{H * 2},"
@@ -201,6 +233,8 @@ def production_script(title: str, tid: str, render: dict) -> str:
            f"Transformation {tid} · Video Package v{render['artifact_version']} · {render['seconds']:.0f} s · {render['resolution']}",
            f"Narration: {render['models']['narration']} · Motion: {render['models']['motion'] or 'not configured (animated stills)'}"
            f" · Stills: {render['models']['stills'] or '—'}",
+           *( [f"Narration note: {render['narration_note']}"] if render.get("narration_note") else [] ),
+           *( [f"Motion note: {render['motion_note']}"] if render.get("motion_note") and render["models"].get("motion") else [] ),
            f"Video sha256: {render['sha256']}", "",
            "Narration is the verified, released script; visuals are AI-generated illustrations, not evidence.", ""]
     for s in render["scenes"]:

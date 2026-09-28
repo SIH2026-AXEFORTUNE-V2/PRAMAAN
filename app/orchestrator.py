@@ -821,6 +821,8 @@ async def render_video(t: dict) -> None:
     stills = {x["slot"]: x for x in a.get("illustrations", [])}
     sem = asyncio.Semaphore(3)
     done = 0
+    motion_off: dict = {"reason": None if videogen.motion_available() else "no motion model configured"}
+    voice_off: dict = {"reason": None}
 
     async def prep(i: int, s: dict) -> dict:
         nonlocal done
@@ -828,7 +830,13 @@ async def render_video(t: dict) -> None:
             n = s.get("scene_number", i + 1)
             spoken = videogen.speakable(s["narration"])
             audio = work / f"audio-{i:02d}.mp3"
-            audio.write_bytes(await videogen.narrate(spoken))
+            if not voice_off["reason"]:
+                try:
+                    audio.write_bytes(await videogen.narrate(spoken))
+                except EngineError as e:
+                    voice_off["reason"] = str(e)  # e.g. daily quota: render silently with subtitles instead of failing
+            if voice_off["reason"]:
+                await asyncio.to_thread(videogen.silence, videogen.reading_seconds(spoken), audio)
             director_input, _ = imagegen.art_brief(s.get("visual_description", ""), f"{domain}: {s.get('title', '')}")
             prompt = ""
             if LIVE:
@@ -841,7 +849,13 @@ async def render_video(t: dict) -> None:
                 prompt = imagegen.build_prompt(s.get("visual_description", ""), f"{domain}: {s.get('title', '')}")[0]
             source = "still"
             visual = work / f"visual-{i:02d}.jpg"
-            clip = await videogen.motion_clip(prompt + " Slow, steady cinematic camera movement.")
+            clip = None
+            if not motion_off["reason"] and i < config.VIDEO_MOTION_MAX:
+                clip, why = await videogen.motion_clip(prompt + " Slow, steady cinematic camera movement.")
+                if why and ("balance" in why or "401" in why or "403" in why):
+                    motion_off["reason"] = why  # account-level problem: don't spend a request on every scene
+                elif why:
+                    log.warning("motion clip for scene %s failed: %s", n, why)
             if clip:
                 visual = work / f"visual-{i:02d}.mp4"
                 visual.write_bytes(clip)
@@ -887,6 +901,8 @@ async def render_video(t: dict) -> None:
             "artifact_version": a["version"], "resolution": f"{videogen.W}x{videogen.H}",
             "models": {"narration": config.TTS_MODEL, "motion": config.VIDEO_MODEL if videogen.motion_available() else None,
                        "stills": config.IMAGE_MODEL if imagegen.available() else None},
+            "motion_note": motion_off["reason"],
+            "narration_note": voice_off["reason"],
             "scenes": [{"scene": p["scene"], "title": p["title"], "source": p["source"], "prompt": p["prompt"],
                         "spoken": p["spoken"], "start": p["start"], "end": p["end"], "captions": p["captions"]} for p in prepared],
         }
@@ -901,7 +917,8 @@ async def render_video(t: dict) -> None:
             a["approval"].update(status="pending", by=None, at=None, comment="")
             _derive(a)
         motion = sum(1 for p in prepared if p["source"] == "motion")
-        _finish(tk, "completed", f"{length:.0f}s MP4 · {motion}/{len(prepared)} motion scenes")
+        _finish(tk, "completed", f"{length:.0f}s MP4 · {motion}/{len(prepared)} motion scenes"
+                + (" · no narration (subtitles only)" if voice_off["reason"] else ""))
         ledger.audit("Video rendered", f"Video Package v{a['version']}", actor="Video Production Agent", actor_type="agent",
                      transformation_id=t["id"], detail=f"{length:.0f}s, {motion} motion / {len(prepared) - motion} still scenes; "
                                                        f"narration {config.TTS_MODEL}")

@@ -54,6 +54,11 @@ TTS_VOICE = os.getenv("TTS_VOICE", "").strip()
 POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY", "").strip()
 VIDEO_MODEL = os.getenv("VIDEO_MODEL", "amazon/nova-reel-v1").strip()
 VIDEO_TIMEOUT_S = int(os.getenv("VIDEO_TIMEOUT_S", "240"))
+# Clip length requested per scene (Nova Reel's minimum is 6 s; most other models max out at 5 s).
+# How many scenes per video get a real motion clip (the rest are animated stills). Nova Reel is on
+# Pollinations' free "Quest" tier at ~0.48 pollen per clip, so one hero clip keeps a video affordable.
+VIDEO_MOTION_MAX = int(os.getenv("VIDEO_MOTION_MAX", "1"))
+VIDEO_CLIP_SECONDS = int(os.getenv("VIDEO_CLIP_SECONDS", "6" if "nova-reel" in VIDEO_MODEL else "5"))
 
 # Which text engine to use: auto (Groq > self-hosted gateway > Hugging Face), or force one.
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "auto").strip().lower()

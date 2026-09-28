@@ -139,7 +139,7 @@ async def generate(prompt: str, aspect: float) -> bytes:
     url = f"https://api.cloudflare.com/client/v4/accounts/{config.CLOUDFLARE_ACCOUNT_ID}/ai/run/{config.IMAGE_MODEL}"
     async with httpx.AsyncClient(timeout=90) as client:
         for attempt in range(3):
-            r = await client.post(url, json={"prompt": prompt, "steps": 8},
+            r = await client.post(url, json={"prompt": prompt, "steps": 4},  # schnell is distilled for 4 steps
                                   headers={"Authorization": f"Bearer {config.CLOUDFLARE_API_TOKEN}"})
             if r.status_code == 200:
                 if r.headers.get("content-type", "").startswith("image/"):
@@ -151,6 +151,8 @@ async def generate(prompt: str, aspect: float) -> bytes:
                 return _crop(raw, aspect)
             if r.status_code in (401, 403):
                 raise EngineError("Cloudflare rejected the API token (check CLOUDFLARE_API_TOKEN permissions for Workers AI).")
+            if r.status_code == 429 and "daily free allocation" in r.text:
+                raise EngineError("Cloudflare Workers AI daily free allowance is used up (resets 00:00 UTC).")
             if r.status_code == 429 or r.status_code >= 500:
                 import asyncio
                 await asyncio.sleep(2 * (attempt + 1))

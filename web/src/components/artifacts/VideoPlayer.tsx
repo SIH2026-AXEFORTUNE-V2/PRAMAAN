@@ -118,6 +118,12 @@ export function VideoPlayer({ src, render, stale }: { src: string; render: Video
         Narration ({render.models.narration.split("/").pop()}) reads the verified, released script. Visuals are illustrative
         {render.models.motion ? `; motion clips from ${render.models.motion}` : "; no motion model configured, so scenes use animated stills"}.
       </p>
+      {render.narration_note && (
+        <p className="mt-1.5 text-xs text-warning">No narration: {render.narration_note}. The video uses subtitles only; render again once it is available.</p>
+      )}
+            {render.motion_note && render.models.motion && (
+        <p className="mt-1.5 text-xs text-warning">Motion clips skipped: {render.motion_note}. Scenes fell back to animated stills.</p>
+      )}
       <ProductionScript render={render} seek={seek} />
     </section>
   );

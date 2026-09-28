@@ -285,6 +285,8 @@ export interface VideoRender {
   artifact_version: number;
   resolution: string;
   models: { narration: string; motion: string | null; stills: string | null };
+  motion_note?: string | null;
+  narration_note?: string | null;
   scenes: {
     scene: number;
     title: string;
