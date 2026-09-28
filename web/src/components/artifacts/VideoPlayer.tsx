@@ -18,6 +18,7 @@ const tc = (sec = 0) => {
 /** The production script of what was actually rendered, scene by scene. Timecodes seek the video. */
 function ProductionScript({ render, seek }: { render: VideoRender; seek: (t: number) => void }) {
   const [open, setOpen] = useState(true);
+  const approx = render.timing === "estimated" ? "≈ " : "";
   return (
     <div className="mt-5 rounded-xl ring-1 ring-border">
       <button
@@ -28,7 +29,10 @@ function ProductionScript({ render, seek }: { render: VideoRender; seek: (t: num
       >
         <span className="flex-1">
           <span className="block text-sm font-semibold text-fg">Production script</span>
-          <span className="block text-xs text-muted">What each scene shows and says, exactly as rendered. Download it from Export → SCRIPT.</span>
+          <span className="block text-xs text-muted">
+            What each scene shows and says, exactly as rendered. Download it from Export → SCRIPT.
+            {render.timing === "estimated" && " Timecodes are estimated from the spoken words."}
+          </span>
         </span>
         <ChevronDown size={16} className={cx("text-subtle transition-transform", open && "rotate-180")} />
       </button>
@@ -43,9 +47,13 @@ function ProductionScript({ render, seek }: { render: VideoRender; seek: (t: num
                   className="font-mono text-sm font-semibold text-accent hover:underline"
                   title="Play from this scene"
                 >
+                  {approx}
                   {tc(s.start)}
                 </button>
-                <p className="font-mono text-2xs text-subtle">to {tc(s.end)}</p>
+                <p className="font-mono text-2xs text-subtle">
+                  to {approx}
+                  {tc(s.end)}
+                </p>
                 <p className="mt-1.5 text-xs font-semibold text-fg">Scene {s.scene}</p>
                 <p className="mt-1 inline-flex items-center gap-1 text-2xs text-muted">
                   {SOURCE[s.source].icon}
@@ -105,6 +113,7 @@ export function VideoPlayer({ src, render, stale }: { src: string; render: Video
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
         <span className="font-semibold text-fg">AI-generated video</span>
+        <span>{render.renderer === "json2video" ? "Rendered by JSON2Video" : "Rendered locally"}</span>
         <span>{render.seconds.toFixed(0)} s</span>
         <span>{render.resolution}</span>
         <span>{bytes(render.bytes)}</span>
@@ -116,8 +125,14 @@ export function VideoPlayer({ src, render, stale }: { src: string; render: Video
       {stale && <p className="mt-2 text-xs text-warning">The script changed after this render. Render again so the video matches the approved version.</p>}
       <p className="mt-2 text-xs text-muted">
         Narration ({render.models.narration.split("/").pop()}) reads the verified, released script. Visuals are illustrative
-        {render.models.motion ? `; motion clips from ${render.models.motion}` : "; no motion model configured, so scenes use animated stills"}.
+        {render.renderer === "json2video"
+          ? ` (${render.models.stills}), animated with slow zooms; subtitles are generated from the narration.`
+          : render.models.motion
+            ? `; motion clips from ${render.models.motion}.`
+            : "; no motion model configured, so scenes use animated stills."}
+        {render.json2video?.quota_left != null && ` JSON2Video quota left: ${Math.round(render.json2video.quota_left)} s.`}
       </p>
+      {render.cloud_note && <p className="mt-1.5 text-xs text-warning">Cloud renderer skipped: {render.cloud_note}. Rendered locally instead.</p>}
       {render.narration_note && (
         <p className="mt-1.5 text-xs text-warning">No narration: {render.narration_note}. The video uses subtitles only; render again once it is available.</p>
       )}

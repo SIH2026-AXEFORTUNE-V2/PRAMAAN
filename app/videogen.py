@@ -231,6 +231,9 @@ def production_script(title: str, tid: str, render: dict) -> str:
     """Markdown production script of what was actually rendered: timecodes, spoken lines, subtitles, visuals."""
     out = [f"# Production script · {title}", "",
            f"Transformation {tid} · Video Package v{render['artifact_version']} · {render['seconds']:.0f} s · {render['resolution']}",
+           f"Renderer: {'JSON2Video (cloud)' if render.get('renderer') == 'json2video' else 'local ffmpeg'}"
+           + (" · timecodes estimated from spoken words" if render.get("timing") == "estimated" else ""),
+           *( [f"Cloud renderer skipped: {render['cloud_note']}"] if render.get("cloud_note") else [] ),
            f"Narration: {render['models']['narration']} · Motion: {render['models']['motion'] or 'not configured (animated stills)'}"
            f" · Stills: {render['models']['stills'] or '—'}",
            *( [f"Narration note: {render['narration_note']}"] if render.get("narration_note") else [] ),
@@ -238,7 +241,8 @@ def production_script(title: str, tid: str, render: dict) -> str:
            f"Video sha256: {render['sha256']}", "",
            "Narration is the verified, released script; visuals are AI-generated illustrations, not evidence.", ""]
     for s in render["scenes"]:
-        out += [f"## Scene {s['scene']} · {tc(s.get('start', 0))}–{tc(s.get('end', 0))} · {s['title']}", "",
+        approx = "≈" if render.get("timing") == "estimated" else ""
+        out += [f"## Scene {s['scene']} · {approx}{tc(s.get('start', 0))}–{approx}{tc(s.get('end', 0))} · {s['title']}", "",
                 f"**Visual** ({'motion clip' if s['source'] == 'motion' else s['source']}): {s['prompt']}", "",
                 f"**Narration (spoken):** {s.get('spoken', '')}", ""]
         if s.get("captions"):
@@ -257,3 +261,83 @@ def stitch(work: Path, segments: list[Path], out: Path) -> float:
     if res.returncode != 0:
         raise EngineError(f"Joining scenes failed: {res.stderr.strip()[-300:]}")
     return duration(out)
+
+
+# ---------------------------------------------------------------------------
+# JSON2Video (cloud renderer): AI images, Azure neural voices and subtitles rendered on their servers.
+# ---------------------------------------------------------------------------
+J2V_API = "https://api.json2video.com/v2/movies"
+AZURE_VOICES = {
+    "English": ("en-US-AriaNeural", "en"), "Hindi": ("hi-IN-SwaraNeural", "hi"), "Tamil": ("ta-IN-PallaviNeural", "ta"),
+    "Telugu": ("te-IN-ShrutiNeural", "te"), "Kannada": ("kn-IN-SapnaNeural", "kn"), "Malayalam": ("ml-IN-SobhanaNeural", "ml"),
+    "Marathi": ("mr-IN-AarohiNeural", "mr"), "Bengali": ("bn-IN-TanishaaNeural", "bn"), "Gujarati": ("gu-IN-DhwaniNeural", "gu"),
+    "French": ("fr-FR-DeniseNeural", "fr"), "Spanish": ("es-ES-ElviraNeural", "es"), "Arabic": ("ar-SA-ZariyahNeural", "ar"),
+}
+
+
+def j2v_available() -> bool:
+    return bool(config.JSON2VIDEO_API_KEY)
+
+
+def j2v_estimate(spoken: list[str]) -> float:
+    """Rough spoken length: ~2.5 words/s plus a short pause per scene."""
+    return sum(max(2.5, len(s.split()) / 2.5) + 0.4 for s in spoken)
+
+
+def j2v_movie(scenes: list[dict], language: str) -> dict:
+    voice, lang = AZURE_VOICES.get(language, AZURE_VOICES["English"])
+    if config.J2V_VOICE and language == "English":
+        voice = config.J2V_VOICE
+    return {
+        "resolution": "custom", "width": 1280, "height": 720, "quality": "high",
+        "scenes": [{"elements": [
+            {"type": "image", "prompt": s["prompt"][:900], "model": config.J2V_IMAGE_MODEL, "zoom": 2 if i % 2 == 0 else -2},
+            {"type": "voice", "text": s["spoken"], "model": "azure", "voice": voice},
+        ]} for i, s in enumerate(scenes)],
+        "elements": [
+            {"type": "subtitles", "language": lang,
+             "settings": {"style": "classic", "font-family": "Atkinson Hyperlegible", "position": "bottom-center"}},
+            {"type": "text", "style": "001", "text": "AI-generated video · PRAMAAN", "duration": -2,
+             "settings": {"vertical-position": "top", "horizontal-position": "left", "font-family": "Atkinson Hyperlegible",
+                          "font-size": "22px", "color": "#FFFFFF", "background-color": "rgba(10,16,30,0.55)",
+                          "padding": "6px 12px", "margin": "22px", "border-radius": "6px"}},
+        ],
+    }
+
+
+async def render_json2video(scenes: list[dict], language: str, out: Path, progress=None) -> dict:
+    """Render on JSON2Video and download the MP4 to `out`. Raises EngineError (caller falls back to local)."""
+    headers = {"x-api-key": config.JSON2VIDEO_API_KEY, "Content-Type": "application/json"}
+    need = j2v_estimate([s["spoken"] for s in scenes])
+    async with httpx.AsyncClient(timeout=60) as client:
+        acct = (await client.get("https://api.json2video.com/v2/account", headers=headers)).json()
+        max_len = (acct.get("account", {}).get("plan_info") or {}).get("max_length") or 600
+        quota = ((await client.get(J2V_API, headers=headers)).json().get("remaining_quota") or {}).get("time", 0)
+        if need > max_len - 2:
+            raise EngineError(f"narration runs ~{need:.0f}s, over JSON2Video's {max_len}s plan limit (narration is never cut)")
+        if quota < need + 5:
+            raise EngineError(f"JSON2Video quota has {quota:.0f}s left, this video needs ~{need:.0f}s")
+        r = await client.post(J2V_API, headers=headers, json=j2v_movie(scenes, language))
+        body = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
+        if not body.get("success"):
+            raise EngineError(f"JSON2Video rejected the movie: {str(body.get('message') or r.text)[:200]}")
+        project = body["project"]
+        movie: dict = {}
+        for _ in range(config.J2V_TIMEOUT_S // 5):
+            await asyncio.sleep(5)
+            movie = (await client.get(J2V_API, params={"project": project}, headers=headers)).json().get("movie", {})
+            if progress:
+                progress(movie.get("message") or movie.get("status") or "rendering")
+            if movie.get("status") in ("done", "error"):
+                break
+        if movie.get("status") != "done" or not movie.get("url"):
+            raise EngineError(f"JSON2Video render {movie.get('status') or 'timed out'}: {movie.get('message', '')[:160]}")
+        async with client.stream("GET", movie["url"], timeout=120) as resp:
+            if resp.status_code != 200:
+                raise EngineError(f"Could not download the rendered video (HTTP {resp.status_code}).")
+            with out.open("wb") as fh:
+                async for chunk in resp.aiter_bytes():
+                    fh.write(chunk)
+        quota_left = ((await client.get(J2V_API, headers=headers)).json().get("remaining_quota") or {}).get("time")
+    return {"project": project, "voice": j2v_movie(scenes[:1], language)["scenes"][0]["elements"][1]["voice"],
+            "rendering_time": movie.get("rendering_time"), "quota_left": quota_left, "resolution": f"{movie.get('width')}x{movie.get('height')}"}

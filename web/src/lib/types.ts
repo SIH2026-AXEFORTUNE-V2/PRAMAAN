@@ -287,6 +287,10 @@ export interface VideoRender {
   models: { narration: string; motion: string | null; stills: string | null };
   motion_note?: string | null;
   narration_note?: string | null;
+  renderer?: "json2video" | "local";
+  timing?: "estimated" | "measured";
+  cloud_note?: string | null;
+  json2video?: { project: string; quota_left: number | null; rendering_time: number | null };
   scenes: {
     scene: number;
     title: string;

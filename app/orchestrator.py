@@ -809,7 +809,7 @@ async def render_video(t: dict) -> None:
                "Motion clips or animated stills, verified narration, subtitles, stitched into one MP4",
                "video_production", [], artifact="video")
     _start(tk, f"Preparing {len(scenes)} scenes")
-    tk["model"] = config.TTS_MODEL + (f" + {config.VIDEO_MODEL}" if videogen.motion_available() else "")
+    tk["model"] = "JSON2Video" if videogen.j2v_available() else config.TTS_MODEL + (f" + {config.VIDEO_MODEL}" if videogen.motion_available() else "")
     save(t)
     base = _dir(t["id"]) / "video"
     work = base / "work"
@@ -824,6 +824,44 @@ async def render_video(t: dict) -> None:
     motion_off: dict = {"reason": None if videogen.motion_available() else "no motion model configured"}
     voice_off: dict = {"reason": None}
 
+    async def make_prompt(s: dict) -> str:
+        """Art director: a concrete, wordless photographic scene for this storyboard beat (scrubbed input)."""
+        director_input, _ = imagegen.art_brief(s.get("visual_description", ""), f"{domain}: {s.get('title', '')}")
+        if LIVE:
+            try:
+                scene, _ = await LIVE.generate_json(imagegen.ART_DIRECTOR, director_input, imagegen.SCENE_SCHEMA, 0.7)
+                if scene.get("scene"):
+                    return imagegen.scene_prompt(scene["scene"])
+            except EngineError:
+                pass
+        return imagegen.build_prompt(s.get("visual_description", ""), f"{domain}: {s.get('title', '')}")[0]
+
+    async def via_json2video(out) -> dict:
+        tk["detail"] = "Art director writing scene prompts"
+        prompts = await asyncio.gather(*(make_prompt(s) for s in scenes))
+        items = [{"scene": s.get("scene_number", i + 1), "title": s.get("title", ""), "spoken": videogen.speakable(s["narration"]),
+                  "prompt": pr} for i, (s, pr) in enumerate(zip(scenes, prompts))]
+        tk["progress"] = 20
+        tk["model"] = f"JSON2Video ({config.J2V_IMAGE_MODEL} + Azure voice)"
+
+        def progress(msg: str) -> None:
+            tk["detail"] = f"JSON2Video: {msg}"
+            tk["progress"] = min(tk["progress"] + 3, 92)
+
+        meta = await videogen.render_json2video(items, t["params"]["language"], out, progress)
+        length = await asyncio.to_thread(videogen.duration, out)
+        words = [max(1, len(x["spoken"].split())) for x in items]
+        clock, scenes_out = 0.0, []
+        for x, w in zip(items, words):  # JSON2Video does not report scene boundaries: estimate by spoken words
+            d = length * w / sum(words)
+            scenes_out.append({**x, "source": "still", "start": round(clock, 2), "end": round(clock + d, 2), "captions": []})
+            clock += d
+        return {"renderer": "json2video", "timing": "estimated", "seconds": round(length, 1), "resolution": meta["resolution"],
+                "models": {"narration": f"Azure {meta['voice']} via JSON2Video", "motion": None,
+                           "stills": f"{config.J2V_IMAGE_MODEL} via JSON2Video"},
+                "motion_note": None, "narration_note": None, "scenes": scenes_out,
+                "json2video": {"project": meta["project"], "quota_left": meta["quota_left"], "rendering_time": meta["rendering_time"]}}
+
     async def prep(i: int, s: dict) -> dict:
         nonlocal done
         async with sem:
@@ -837,16 +875,7 @@ async def render_video(t: dict) -> None:
                     voice_off["reason"] = str(e)  # e.g. daily quota: render silently with subtitles instead of failing
             if voice_off["reason"]:
                 await asyncio.to_thread(videogen.silence, videogen.reading_seconds(spoken), audio)
-            director_input, _ = imagegen.art_brief(s.get("visual_description", ""), f"{domain}: {s.get('title', '')}")
-            prompt = ""
-            if LIVE:
-                try:
-                    scene, _ = await LIVE.generate_json(imagegen.ART_DIRECTOR, director_input, imagegen.SCENE_SCHEMA, 0.7)
-                    prompt = imagegen.scene_prompt(scene.get("scene", ""))
-                except EngineError:
-                    prompt = ""
-            if not prompt:
-                prompt = imagegen.build_prompt(s.get("visual_description", ""), f"{domain}: {s.get('title', '')}")[0]
+            prompt = await make_prompt(s)
             source = "still"
             visual = work / f"visual-{i:02d}.jpg"
             clip = None
@@ -877,9 +906,7 @@ async def render_video(t: dict) -> None:
             return {"i": i, "scene": n, "title": s.get("title", ""), "spoken": spoken, "audio": audio, "visual": visual,
                     "source": source, "prompt": prompt}
 
-    try:
-        if not scenes:
-            raise EngineError("The video package has no narrated scenes.")
+    async def locally(out) -> dict:
         prepared = sorted(await asyncio.gather(*(prep(i, s) for i, s in enumerate(scenes))), key=lambda x: x["i"])
         segments, clock = [], 0.0
         for k, p in enumerate(prepared, 1):
@@ -891,37 +918,52 @@ async def render_video(t: dict) -> None:
             clock += seg_len
             tk["progress"] = int(50 + 45 * k / len(prepared))
         tk["detail"] = "Joining scenes"
-        out = video_path(t["id"])
         length = await asyncio.to_thread(videogen.stitch, work, segments, work / "final.mp4")
         shutil.move(str(work / "final.mp4"), out)
+        return {"renderer": "local", "timing": "measured", "seconds": round(length, 1), "resolution": f"{videogen.W}x{videogen.H}",
+                "models": {"narration": config.TTS_MODEL, "motion": config.VIDEO_MODEL if videogen.motion_available() else None,
+                           "stills": config.IMAGE_MODEL if imagegen.available() else None},
+                "motion_note": motion_off["reason"], "narration_note": voice_off["reason"],
+                "scenes": [{"scene": p["scene"], "title": p["title"], "source": p["source"], "prompt": p["prompt"],
+                            "spoken": p["spoken"], "start": p["start"], "end": p["end"], "captions": p["captions"]} for p in prepared]}
+
+    try:
+        if not scenes:
+            raise EngineError("The video package has no narrated scenes.")
+        out = video_path(t["id"])
+        info, cloud_note = None, None
+        if videogen.j2v_available():
+            try:
+                info = await via_json2video(out)
+            except EngineError as e:
+                cloud_note = str(e)
+                log.warning("JSON2Video not used: %s", e)
+                tk["detail"] = "JSON2Video unavailable; rendering locally"
+                tk["model"] = config.TTS_MODEL + (f" + {config.VIDEO_MODEL}" if videogen.motion_available() else "")
+        if info is None:
+            info = await locally(out)
+        info["cloud_note"] = cloud_note
         data = out.read_bytes()
         digest = hashlib.sha256(data).hexdigest()
-        a["video_render"] = {
-            "sha256": digest, "bytes": len(data), "seconds": round(length, 1), "created_at": ledger.now(),
-            "artifact_version": a["version"], "resolution": f"{videogen.W}x{videogen.H}",
-            "models": {"narration": config.TTS_MODEL, "motion": config.VIDEO_MODEL if videogen.motion_available() else None,
-                       "stills": config.IMAGE_MODEL if imagegen.available() else None},
-            "motion_note": motion_off["reason"],
-            "narration_note": voice_off["reason"],
-            "scenes": [{"scene": p["scene"], "title": p["title"], "source": p["source"], "prompt": p["prompt"],
-                        "spoken": p["spoken"], "start": p["start"], "end": p["end"], "captions": p["captions"]} for p in prepared],
-        }
+        a["video_render"] = {**info, "sha256": digest, "bytes": len(data), "created_at": ledger.now(), "artifact_version": a["version"]}
         shutil.rmtree(work, ignore_errors=True)
         entry = ledger.record("video_render", t["id"], {"artifact": "video", "version": a["version"], "sha256": digest,
-                                                        "seconds": a["video_render"]["seconds"],
-                                                        "models": a["video_render"]["models"],
-                                                        "scene_sources": [p["source"] for p in prepared]})
+                                                        "renderer": info["renderer"], "seconds": info["seconds"],
+                                                        "models": info["models"],
+                                                        "scene_sources": [x["source"] for x in info["scenes"]]})
         t["provenance"]["ledger_entries"].append(entry["index"])
         if a["approval"]["status"] == "approved":
             a["approval"]["history"].append({k: a["approval"][k] for k in ("status", "by", "at", "comment")})
             a["approval"].update(status="pending", by=None, at=None, comment="")
             _derive(a)
-        motion = sum(1 for p in prepared if p["source"] == "motion")
-        _finish(tk, "completed", f"{length:.0f}s MP4 · {motion}/{len(prepared)} motion scenes"
-                + (" · no narration (subtitles only)" if voice_off["reason"] else ""))
+        motion = sum(1 for x in info["scenes"] if x["source"] == "motion")
+        where = "JSON2Video" if info["renderer"] == "json2video" else "local"
+        _finish(tk, "completed", f"{info['seconds']:.0f}s MP4 · {where}"
+                + (f" · {motion}/{len(info['scenes'])} motion" if motion else "")
+                + (" · no narration (subtitles only)" if info.get("narration_note") else ""))
         ledger.audit("Video rendered", f"Video Package v{a['version']}", actor="Video Production Agent", actor_type="agent",
-                     transformation_id=t["id"], detail=f"{length:.0f}s, {motion} motion / {len(prepared) - motion} still scenes; "
-                                                       f"narration {config.TTS_MODEL}")
+                     transformation_id=t["id"], detail=f"{info['seconds']:.0f}s via {where}; narration {info['models']['narration']}"
+                                                       + (f"; cloud renderer skipped: {cloud_note}" if cloud_note else ""))
     except Exception as e:  # noqa: BLE001 - any failure is reported on the task, the rest of the run is untouched
         log.exception("video render failed")
         _finish(tk, "failed", "Video render failed", error=str(e)[:300])
