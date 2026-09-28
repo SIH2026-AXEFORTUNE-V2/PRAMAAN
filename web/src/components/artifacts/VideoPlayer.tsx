@@ -2,11 +2,12 @@ import { useRef, useState } from "react";
 import { ChevronDown, Clapperboard, Film, Image as ImageIcon } from "lucide-react";
 import { bytes, cx, dateTime } from "@/lib/format";
 import type { VideoRender } from "@/lib/types";
+import { msg, tr } from "@/i18n";
 
 const SOURCE = {
-  motion: { label: "Motion clip", icon: <Film size={12} aria-hidden /> },
-  still: { label: "Animated still", icon: <ImageIcon size={12} aria-hidden /> },
-  "title card": { label: "Title card", icon: <Clapperboard size={12} aria-hidden /> },
+  motion: { label: msg("Motion clip"), icon: <Film size={12} aria-hidden /> },
+  still: { label: msg("Animated still"), icon: <ImageIcon size={12} aria-hidden /> },
+  "title card": { label: msg("Title card"), icon: <Clapperboard size={12} aria-hidden /> },
 } as const;
 
 const tc = (sec = 0) => {
@@ -28,10 +29,10 @@ function ProductionScript({ render, seek }: { render: VideoRender; seek: (t: num
         className="flex w-full items-center gap-2 px-4 py-3 text-left"
       >
         <span className="flex-1">
-          <span className="block text-sm font-semibold text-fg">Production script</span>
+          <span className="block text-sm font-semibold text-fg">{tr("Production script")}</span>
           <span className="block text-xs text-muted">
-            What each scene shows and says, exactly as rendered. Download it from Export → SCRIPT.
-            {render.timing === "estimated" && " Timecodes are estimated from the spoken words."}
+            {tr("What each scene shows and says, exactly as rendered. Download it from Export → SCRIPT.")}
+            {render.timing === "estimated" && ` ${tr("Timecodes are estimated from the spoken words.")}`}
           </span>
         </span>
         <ChevronDown size={16} className={cx("text-subtle transition-transform", open && "rotate-180")} />
@@ -45,31 +46,31 @@ function ProductionScript({ render, seek }: { render: VideoRender; seek: (t: num
                   type="button"
                   onClick={() => seek(s.start ?? 0)}
                   className="font-mono text-sm font-semibold text-accent hover:underline"
-                  title="Play from this scene"
+                  title={tr("Play from this scene")}
                 >
                   {approx}
                   {tc(s.start)}
                 </button>
                 <p className="font-mono text-2xs text-subtle">
-                  to {approx}
+                  {tr("to")} {approx}
                   {tc(s.end)}
                 </p>
                 <p className="mt-1.5 text-xs font-semibold text-fg">Scene {s.scene}</p>
                 <p className="mt-1 inline-flex items-center gap-1 text-2xs text-muted">
                   {SOURCE[s.source].icon}
-                  {SOURCE[s.source].label}
+                  {tr(SOURCE[s.source].label)}
                 </p>
               </div>
               <div className="min-w-0 space-y-2">
                 <p className="text-sm font-semibold text-fg">{s.title}</p>
                 <p className="text-base leading-relaxed text-fg">
-                  <span className="mr-1.5 text-xs font-semibold text-muted">Narration</span>
-                  {s.spoken ?? "Re-render to record the spoken script."}
+                  <span className="mr-1.5 text-xs font-semibold text-muted">{tr("Narration")}</span>
+                  {s.spoken ?? tr("Re-render to record the spoken script.")}
                 </p>
                 <p className="text-sm text-muted" title={s.prompt}>
-                  <span className="mr-1.5 text-xs font-semibold">Visual</span>
+                  <span className="mr-1.5 text-xs font-semibold">{tr("Visual")}</span>
                   {s.prompt.split(/\.\s*cinematic photograph/i)[0]}
-                  <span className="ml-1.5 text-2xs text-subtle">+ house style and no-text safety rules</span>
+                  <span className="ml-1.5 text-2xs text-subtle">{tr("+ house style and no-text safety rules")}</span>
                 </p>
                 {s.captions && s.captions.length > 0 && (
                   <details className="text-xs text-muted">
@@ -107,13 +108,13 @@ export function VideoPlayer({ src, render, stale }: { src: string; render: Video
     v.scrollIntoView({ block: "nearest", behavior: "smooth" });
   };
   return (
-    <section className="mb-8" aria-label="Rendered video">
+    <section className="mb-8" aria-label={tr("Rendered video")}>
       <div className="overflow-hidden rounded-xl bg-black ring-1 ring-border">
         <video ref={ref} src={src} controls preload="metadata" className="aspect-video w-full" />
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
-        <span className="font-semibold text-fg">AI-generated video</span>
-        <span>{render.renderer === "json2video" ? "Rendered by JSON2Video" : "Rendered locally"}</span>
+        <span className="font-semibold text-fg">{tr("AI-generated video")}</span>
+        <span>{render.renderer === "json2video" ? tr("Rendered by JSON2Video") : tr("Rendered locally")}</span>
         <span>{render.seconds.toFixed(0)} s</span>
         <span>{render.resolution}</span>
         <span>{bytes(render.bytes)}</span>
@@ -122,15 +123,15 @@ export function VideoPlayer({ src, render, stale }: { src: string; render: Video
         </span>
         <span>Rendered {dateTime(render.created_at)} from v{render.artifact_version}</span>
       </div>
-      {stale && <p className="mt-2 text-xs text-warning">The script changed after this render. Render again so the video matches the approved version.</p>}
+      {stale && <p className="mt-2 text-xs text-warning">{tr("The script changed after this render. Render again so the video matches the approved version.")}</p>}
       <p className="mt-2 text-xs text-muted">
-        Narration ({render.models.narration.split("/").pop()}) reads the verified, released script. Visuals are illustrative
+        {tr("Narration ({model}) reads the verified, released script. Visuals are illustrative", { model: render.models.narration.split("/").pop() ?? "" })}
         {render.renderer === "json2video"
-          ? ` (${render.models.stills}), animated with slow zooms; subtitles are generated from the narration.`
+          ? ` (${render.models.stills}), ${tr("animated with slow zooms; subtitles are generated from the narration.")}`
           : render.models.motion
-            ? `; motion clips from ${render.models.motion}.`
+            ? `; ${tr("motion clips from {model}.", { model: render.models.motion })}`
             : "; no motion model configured, so scenes use animated stills."}
-        {render.json2video?.quota_left != null && ` JSON2Video quota left: ${Math.round(render.json2video.quota_left)} s.`}
+        {render.json2video?.quota_left != null && ` ${tr("JSON2Video quota left: {n} s.", { n: Math.round(render.json2video.quota_left) })}`}
       </p>
       {render.cloud_note && <p className="mt-1.5 text-xs text-warning">Cloud renderer skipped: {render.cloud_note}. Rendered locally instead.</p>}
       {render.narration_note && (

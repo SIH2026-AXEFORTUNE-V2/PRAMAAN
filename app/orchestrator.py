@@ -23,9 +23,9 @@ import re
 import shutil
 import time
 
-from . import config, evidence as ev, imagegen, ledger, perception, prompts, quality, security, settings, verify, videogen
+from . import config, evidence as ev, imagegen, infographic, ledger, perception, prompts, quality, security, settings, verify, videogen
 from .catalog import BRIEF_SCHEMA, OUTPUT_TYPES, audience_text
-from .groq_engine import GroqEngine
+from .chat_engine import groq_engine, openai_engine
 from .hf_engine import EngineError, HFEngine
 from .ingest import Source
 from .scripted_engine import ScriptedEngine
@@ -34,7 +34,8 @@ log = logging.getLogger("pramaan.orchestrator")
 
 TEMPERATURE = {"Formal": 0.35, "Neutral": 0.3, "Technical": 0.3, "Executive": 0.4, "Advisory": 0.35}
 SCRIPTED = ScriptedEngine()
-LIVE = None if config.DEMO_MODE else (GroqEngine() if config.LLM_PROVIDER == "groq" else HFEngine())
+LIVE = None if config.DEMO_MODE else (openai_engine() if config.LLM_PROVIDER == "openai" else
+                                      groq_engine() if config.LLM_PROVIDER == "groq" else HFEngine())
 
 T: dict[str, dict] = {}                 # transformation id -> state
 SOURCES: dict[str, list[Source]] = {}   # transformation id -> parsed sources (text, pages, pdf bytes)
@@ -738,7 +739,7 @@ async def illustrate(t: dict, otype: str) -> None:
     tk = _task(t, f"illustrate:{otype}", "Visual Agent", f"Illustrate {a['label']}", "generate",
                "Generate illustrative images from the artefact's visual suggestions", "image_generation", [], artifact=otype)
     _start(tk, f"0/{len(plan)} images")
-    tk["model"] = config.IMAGE_MODEL
+    tk["model"] = imagegen.model_name()
     save(t)
     made, errors, fresh = [], [], []
     for i, sl in enumerate(plan, 1):
@@ -756,7 +757,7 @@ async def illustrate(t: dict, otype: str) -> None:
         (_images_dir(t["id"], otype) / f"{sl['slot']}.jpg").write_bytes(img)
         digest = ledger.canonical_hash(img.hex())
         fresh.append({"slot": sl["slot"], "label": sl["label"], "brief": sl["brief"], "prompt": prompt, "removed": removed,
-                      "model": config.IMAGE_MODEL, "sha256": digest, "created_at": ledger.now(), "bytes": len(img)})
+                      "model": imagegen.model_name(), "sha256": digest, "created_at": ledger.now(), "bytes": len(img)})
         # the new set replaces the old one; slots that are no longer planned are removed
         a["illustrations"] = fresh + [x for x in a.get("illustrations", [])
                                       if x["slot"] not in {f["slot"] for f in fresh} and x["slot"] in {p["slot"] for p in plan}]
@@ -769,7 +770,7 @@ async def illustrate(t: dict, otype: str) -> None:
         for f in _images_dir(t["id"], otype).glob("*.jpg"):
             if f.stem not in keep:
                 f.unlink(missing_ok=True)
-        entry = ledger.record("illustration", t["id"], {"artifact": otype, "version": a["version"], "model": config.IMAGE_MODEL,
+        entry = ledger.record("illustration", t["id"], {"artifact": otype, "version": a["version"], "model": imagegen.model_name(),
                                                          "images": made})
         t["provenance"]["ledger_entries"].append(entry["index"])
         if a["approval"]["status"] == "approved":
@@ -782,8 +783,74 @@ async def illustrate(t: dict, otype: str) -> None:
         _finish(tk, "completed", f"{len(made)} illustration(s)" + (f" · stopped: {errors[0][:60]}" if errors else ""))
     ledger.audit("Illustrations generated" if made else "Illustration failed", a["label"], actor="Visual Agent", actor_type="agent",
                  transformation_id=t["id"], status="success" if made and not errors else ("warning" if made else "failed"),
-                 detail=f"{len(made)} image(s) via {config.IMAGE_MODEL}; prompts scrubbed of sensitive data and figures"
+                 detail=f"{len(made)} image(s) via {imagegen.model_name()}; prompts scrubbed of sensitive data and figures"
                         + (f"; {errors[0]}" if errors else ""))
+    _refresh_approval(t)
+    save(t)
+
+
+def design_path(tid: str):
+    return _dir(tid) / "design" / "infographic.jpg"
+
+
+async def design_infographic(t: dict) -> None:
+    """Visual Agent: draw the released infographic with a text-capable image model, then read it back and verify it."""
+    a = t["artifacts"]["infographic"]
+    content = a["released"] or a["content"] or {}
+    language = t["params"].get("language", "English")
+    expected = infographic.lines(content)
+    tk = _task(t, "design:infographic", "Visual Agent", "Design infographic", "generate",
+               "Render the released infographic as a designed poster, then read it back and verify every line and figure",
+               "image_generation", [], artifact="infographic")
+    _start(tk, "Rendering design")
+    tk["model"] = config.OPENAI_INFOGRAPHIC_MODEL
+    save(t)
+    try:
+        best = None
+        for attempt in (1, 2):
+            tk["detail"] = "Rendering design" if attempt == 1 else "Re-rendering after read-back mismatch"
+            tk["progress"] = 10 if attempt == 1 else 55
+            save(t)
+            img, prompt = await infographic.render(content, language)
+            tk["detail"] = "Reading the design back"
+            tk["progress"] = 40 if attempt == 1 else 85
+            save(t)
+            if LIVE and getattr(LIVE, "has_vision", False):
+                transcript, _ = await LIVE.describe_images([(img, "image/jpeg")], infographic.READBACK_INSTRUCTION)
+                check = infographic.readback_check(expected, transcript)
+            else:
+                check = {"status": "unchecked", "checked_lines": 0, "missing": [], "unexpected_numbers": [], "transcript": ""}
+            score = len(check["missing"]) + len(check["unexpected_numbers"])
+            if best is None or score < best[3]:
+                best = (img, prompt, check, score, attempt)
+            if check["status"] != "issues":
+                break
+        img, prompt, check, _, attempts = best
+        path = design_path(t["id"])
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(img)
+        digest = ledger.canonical_hash(img.hex())
+        a["design"] = {"model": config.OPENAI_INFOGRAPHIC_MODEL, "prompt": prompt, "sha256": digest, "bytes": len(img),
+                       "created_at": ledger.now(), "artifact_version": a["version"], "attempts": attempts,
+                       "readback": {**check, "model": getattr(LIVE, "vision_model", None) if LIVE else None}}
+        entry = ledger.record("infographic_design", t["id"], {"artifact": "infographic", "version": a["version"], "sha256": digest,
+                                                               "model": config.OPENAI_INFOGRAPHIC_MODEL, "readback": check["status"]})
+        t["provenance"]["ledger_entries"].append(entry["index"])
+        if a["approval"]["status"] == "approved":
+            a["approval"]["history"].append({k: a["approval"][k] for k in ("status", "by", "at", "comment")})
+            a["approval"].update(status="pending", by=None, at=None, comment="")
+            _derive(a)
+        n_issues = len(check["missing"]) + len(check["unexpected_numbers"])
+        _finish(tk, "completed", "Read-back passed" if check["status"] == "passed"
+                else (f"Read-back: {n_issues} mismatch(es)" if check["status"] == "issues" else "Read-back unavailable"))
+        ledger.audit("Infographic designed", f"Infographic v{a['version']}", actor="Visual Agent", actor_type="agent",
+                     transformation_id=t["id"], status="success" if check["status"] == "passed" else "warning",
+                     detail=f"{config.OPENAI_INFOGRAPHIC_MODEL}; read-back {check['status']}"
+                            + (f" ({n_issues} mismatch(es))" if n_issues else "") + f"; attempts {attempts}")
+    except EngineError as e:
+        _finish(tk, "failed", "Design failed", error=str(e)[:300])
+        ledger.audit("Infographic design failed", "Infographic", actor="Visual Agent", actor_type="agent",
+                     transformation_id=t["id"], status="failed", detail=str(e)[:300])
     _refresh_approval(t)
     save(t)
 
@@ -809,7 +876,13 @@ async def render_video(t: dict) -> None:
                "Motion clips or animated stills, verified narration, subtitles, stitched into one MP4",
                "video_production", [], artifact="video")
     _start(tk, f"Preparing {len(scenes)} scenes")
-    tk["model"] = "JSON2Video" if videogen.j2v_available() else config.TTS_MODEL + (f" + {config.VIDEO_MODEL}" if videogen.motion_available() else "")
+    language = t["params"].get("language", "English")
+    # Captions in the local renderer are Latin-script only, so Indian-language videos prefer JSON2Video
+    # (Azure neural voices, Indic fonts). English prefers the local renderer when OpenAI narrates it:
+    # no watermark and no cloud-render quota.
+    cloud_first = videogen.j2v_available() and not (config.OPENAI_API_KEY and language == "English")
+    local_model = videogen.tts_model() + (f" + {config.VIDEO_MODEL}" if videogen.motion_available() else "")
+    tk["model"] = "JSON2Video" if cloud_first else local_model
     save(t)
     base = _dir(t["id"]) / "video"
     work = base / "work"
@@ -870,7 +943,7 @@ async def render_video(t: dict) -> None:
             audio = work / f"audio-{i:02d}.mp3"
             if not voice_off["reason"]:
                 try:
-                    audio.write_bytes(await videogen.narrate(spoken))
+                    audio.write_bytes(await videogen.narrate(spoken, language))
                 except EngineError as e:
                     voice_off["reason"] = str(e)  # e.g. daily quota: render silently with subtitles instead of failing
             if voice_off["reason"]:
@@ -921,8 +994,8 @@ async def render_video(t: dict) -> None:
         length = await asyncio.to_thread(videogen.stitch, work, segments, work / "final.mp4")
         shutil.move(str(work / "final.mp4"), out)
         return {"renderer": "local", "timing": "measured", "seconds": round(length, 1), "resolution": f"{videogen.W}x{videogen.H}",
-                "models": {"narration": config.TTS_MODEL, "motion": config.VIDEO_MODEL if videogen.motion_available() else None,
-                           "stills": config.IMAGE_MODEL if imagegen.available() else None},
+                "models": {"narration": videogen.tts_model(), "motion": config.VIDEO_MODEL if videogen.motion_available() else None,
+                           "stills": imagegen.model_name() if imagegen.available() else None},
                 "motion_note": motion_off["reason"], "narration_note": voice_off["reason"],
                 "scenes": [{"scene": p["scene"], "title": p["title"], "source": p["source"], "prompt": p["prompt"],
                             "spoken": p["spoken"], "start": p["start"], "end": p["end"], "captions": p["captions"]} for p in prepared]}
@@ -932,16 +1005,26 @@ async def render_video(t: dict) -> None:
             raise EngineError("The video package has no narrated scenes.")
         out = video_path(t["id"])
         info, cloud_note = None, None
-        if videogen.j2v_available():
+        if cloud_first:
             try:
                 info = await via_json2video(out)
             except EngineError as e:
                 cloud_note = str(e)
                 log.warning("JSON2Video not used: %s", e)
                 tk["detail"] = "JSON2Video unavailable; rendering locally"
-                tk["model"] = config.TTS_MODEL + (f" + {config.VIDEO_MODEL}" if videogen.motion_available() else "")
+                tk["model"] = local_model
         if info is None:
-            info = await locally(out)
+            try:
+                info = await locally(out)
+            except Exception as e:  # noqa: BLE001 - the cloud renderer is the fallback when local rendering fails
+                if cloud_first or not videogen.j2v_available():
+                    raise
+                log.warning("local render failed (%s); trying JSON2Video", e)
+                cloud_note = f"local renderer failed: {e}"[:200]
+                tk["model"] = "JSON2Video"
+                shutil.rmtree(work, ignore_errors=True)
+                work.mkdir(parents=True)
+                info = await via_json2video(out)
         info["cloud_note"] = cloud_note
         data = out.read_bytes()
         digest = hashlib.sha256(data).hexdigest()

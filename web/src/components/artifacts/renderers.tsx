@@ -7,6 +7,7 @@ import { T } from "../evidence/ClaimText";
 import { Illustration } from "./Illustration";
 import { VideoPlayer } from "./VideoPlayer";
 import type { VideoRender } from "@/lib/types";
+import { tr } from "@/i18n";
 
 type Images = Record<string, string>;
 
@@ -32,12 +33,12 @@ function ExecutiveSummary({ c }: { c: Content }) {
   const actions = arr(c.recommended_actions).map(obj);
   return (
     <div>
-      <p className="text-2xs font-bold text-accent">Executive Summary</p>
+      <p className="text-2xs font-bold text-accent">{tr("Executive Summary")}</p>
       <h2 className="mt-1 text-xl leading-tight font-bold text-fg">
         <T path="title" text={str(c.title)} />
       </h2>
       <div className="mt-4 rounded-lg border-l-[3px] border-accent bg-accent-soft/60 px-4 py-3">
-        <p className="text-2xs font-bold text-accent">Bottom line</p>
+        <p className="text-2xs font-bold text-accent">{tr("Bottom line")}</p>
         <p className="mt-1 text-base leading-relaxed font-medium text-fg">
           <T path="bottom_line" text={str(c.bottom_line)} />
         </p>
@@ -56,22 +57,22 @@ function ExecutiveSummary({ c }: { c: Content }) {
           ))}
         </div>
       )}
-      <H>Situation</H>
+      <H>{tr("Situation")}</H>
       <p className="text-base leading-relaxed text-fg">
         <T path="situation" text={str(c.situation)} />
       </p>
-      <H>Key findings</H>
+      <H>{tr("Key findings")}</H>
       <Bullets base="key_findings" items={strs(c.key_findings)} />
-      <H>Implications</H>
+      <H>{tr("Implications")}</H>
       <Bullets base="implications" items={strs(c.implications)} />
-      <H>Recommended actions</H>
+      <H>{tr("Recommended actions")}</H>
       <div className="overflow-hidden rounded-lg border border-border">
         <table className="w-full text-xs">
           <thead className="bg-surface-2 text-left text-2xs text-subtle">
             <tr>
-              <th className="px-3 py-2 font-semibold">Action</th>
-              <th className="px-3 py-2 font-semibold">Owner</th>
-              <th className="px-3 py-2 font-semibold">Timeline</th>
+              <th className="px-3 py-2 font-semibold">{tr("Action")}</th>
+              <th className="px-3 py-2 font-semibold">{tr("Owner")}</th>
+              <th className="px-3 py-2 font-semibold">{tr("Timeline")}</th>
             </tr>
           </thead>
           <tbody>
@@ -89,12 +90,12 @@ function ExecutiveSummary({ c }: { c: Content }) {
       </div>
       {strs(c.risks).length > 0 && (
         <>
-          <H>Risks</H>
+          <H>{tr("Risks")}</H>
           <Bullets base="risks" items={strs(c.risks)} />
         </>
       )}
       <div className="mt-6 rounded-lg border border-border bg-surface-2 px-4 py-3">
-        <p className="text-2xs font-bold text-subtle">Decision required</p>
+        <p className="text-2xs font-bold text-subtle">{tr("Decision required")}</p>
         <p className="mt-1 text-sm text-fg">
           <T path="decision_required" text={str(c.decision_required)} />
         </p>
@@ -118,7 +119,7 @@ function Advisory({ c }: { c: Content }) {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2 text-2xs">
-        <span className="font-bold text-subtle">Advisory</span>
+        <span className="font-bold text-subtle">{tr("Advisory")}</span>
         <span className="text-muted">{str(c.advisory_id)}</span>
         <span className={cx("rounded px-1.5 py-0.5 font-bold", SEV_TONE[str(c.severity)] ?? SEV_TONE.medium)}>{str(c.severity)}</span>
         <span className="rounded border border-border px-1.5 py-0.5 font-semibold">{str(c.classification)}</span>
@@ -127,21 +128,21 @@ function Advisory({ c }: { c: Content }) {
       <h2 className="mt-2 text-xl leading-tight font-bold text-fg">
         <T path="title" text={str(c.title)} />
       </h2>
-      <H>Summary</H>
+      <H>{tr("Summary")}</H>
       <p className="text-base leading-relaxed">
         <T path="summary" text={str(c.summary)} />
       </p>
-      <H>Background</H>
+      <H>{tr("Background")}</H>
       <p className="text-base leading-relaxed">
         <T path="background" text={str(c.background)} />
       </p>
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <div>
-          <H>Affected</H>
+          <H>{tr("Affected")}</H>
           <Bullets base="affected" items={strs(c.affected)} />
         </div>
         <div>
-          <H>Impact</H>
+          <H>{tr("Impact")}</H>
           <p className="text-base leading-relaxed">
             <T path="impact" text={str(c.impact)} />
           </p>
@@ -157,7 +158,7 @@ function Advisory({ c }: { c: Content }) {
           </p>
         </div>
       ))}
-      <H>Recommendations</H>
+      <H>{tr("Recommendations")}</H>
       <ol className="space-y-2">
         {recs.map((r, i) => (
           <li key={i} className="flex gap-3 rounded-lg border border-border px-3 py-2.5">
@@ -178,7 +179,7 @@ function Advisory({ c }: { c: Content }) {
       </ol>
       {inds.length > 0 && (
         <>
-          <H>Indicators</H>
+          <H>{tr("Indicators")}</H>
           <div className="overflow-hidden rounded-lg border border-border">
             <table className="w-full text-xs">
               <tbody>
@@ -208,8 +209,8 @@ function LinkedIn({ c, images }: { c: Content; images: Images }) {
         <div className="mb-3 flex items-center gap-2.5">
           <span className="h-10 w-10 rounded-full bg-surface-3" />
           <div>
-            <p className="text-xs font-semibold">Your organisation</p>
-            <p className="text-2xs text-subtle">Post preview</p>
+            <p className="text-xs font-semibold">{tr("Your organisation")}</p>
+            <p className="text-2xs text-subtle">{tr("Post preview")}</p>
           </div>
         </div>
         <p className="text-base leading-relaxed whitespace-pre-line">
@@ -217,27 +218,27 @@ function LinkedIn({ c, images }: { c: Content; images: Images }) {
         </p>
         <p className="mt-3 text-xs text-accent">{strs(c.hashtags).join(" ")}</p>
         </div>
-        <Illustration src={images["post"]} alt="Post image" className="mt-3 aspect-[1.91/1] bg-surface-3" />
+        <Illustration src={images["post"]} alt={tr("Post image")} className="mt-3 aspect-[1.91/1] bg-surface-3" />
         <div className="mx-4 mb-3 flex gap-5 border-t border-border pt-2.5 text-2xs text-subtle">
           <span className="inline-flex items-center gap-1">
-            <ThumbsUp size={13} /> Like
+            <ThumbsUp size={13} /> {tr("Like")}
           </span>
           <span className="inline-flex items-center gap-1">
-            <MessageCircle size={13} /> Comment
+            <MessageCircle size={13} /> {tr("Comment")}
           </span>
           <span className="inline-flex items-center gap-1">
-            <Repeat2 size={13} /> Repost
+            <Repeat2 size={13} /> {tr("Repost")}
           </span>
         </div>
       </div>
-      <H>Alternate hooks</H>
+      <H>{tr("Alternate hooks")}</H>
       <Bullets base="alternate_hooks" items={strs(c.alternate_hooks)} />
       <div className="mt-4 grid gap-2 text-xs sm:grid-cols-2">
         <p className="rounded-lg border border-border p-3 text-muted">
-          <b className="text-fg">Suggested visual:</b> {str(c.suggested_visual)}
+          <b className="text-fg">{tr("Suggested visual:")}</b> {str(c.suggested_visual)}
         </p>
         <p className="rounded-lg border border-border p-3 text-muted">
-          <b className="text-fg">Best time:</b> {str(c.best_time_to_post)}
+          <b className="text-fg">{tr("Best time:")}</b> {str(c.best_time_to_post)}
         </p>
       </div>
     </div>
@@ -261,7 +262,7 @@ function XThread({ c }: { c: Content }) {
       })}
       {strs(c.alternates).length > 0 && (
         <>
-          <H>Alternates</H>
+          <H>{tr("Alternates")}</H>
           <Bullets base="alternates" items={strs(c.alternates)} />
         </>
       )}
@@ -281,7 +282,7 @@ function Infographic({ c, svgUrl }: { c: Content; svgUrl: string }) {
         <img src={svgUrl} alt={`Infographic: ${str(c.title)}`} className="w-full" />
       </div>
       <div>
-        <p className="text-2xs text-subtle">Rendered from the released version. Text below is traceable to evidence.</p>
+        <p className="text-2xs text-subtle">{tr("Rendered from the released version. Text below is traceable to evidence.")}</p>
         <h2 className="mt-2 text-lg font-bold">
           <T path="title" text={str(c.title)} />
         </h2>
@@ -306,7 +307,7 @@ function Infographic({ c, svgUrl }: { c: Content; svgUrl: string }) {
             </p>
           </div>
         ))}
-        <H>Key messages</H>
+        <H>{tr("Key messages")}</H>
         <Bullets base="key_messages" items={strs(c.key_messages)} />
       </div>
     </div>
@@ -324,10 +325,10 @@ function Presentation({ c, images }: { c: Content; images: Images }) {
     <div>
       <div className={cx("relative aspect-video overflow-hidden rounded-lg border border-border p-[6%]", dark ? "bg-[#0f1729] text-white" : "bg-white text-[#0f1729]")}>
         {img && layout === "title" && (
-          <Illustration src={img} alt={`Slide ${i + 1} illustration`} className="absolute inset-y-0 right-0 w-[45%]" />
+          <Illustration src={img} alt={tr("Slide {n} illustration", { n: i + 1 })} className="absolute inset-y-0 right-0 w-[45%]" />
         )}
         {img && layout !== "title" && (
-          <Illustration src={img} alt={`Slide ${i + 1} illustration`} className="absolute top-[26%] right-[5%] aspect-video w-[30%] rounded-md" />
+          <Illustration src={img} alt={tr("Slide {n} illustration", { n: i + 1 })} className="absolute top-[26%] right-[5%] aspect-video w-[30%] rounded-md" />
         )}
         <div className="absolute top-[6%] left-[6%] h-1 w-12 rounded-full bg-[#6f9bff]" />
         {layout === "big_stat" ? (
@@ -370,7 +371,7 @@ function Presentation({ c, images }: { c: Content; images: Images }) {
           {i + 1} / {slides.length}
         </span>
       </div>
-      <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="Slides">
+      <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label={tr("Slides")}>
         {slides.map((sl, k) => (
           <button
             key={k}
@@ -384,7 +385,7 @@ function Presentation({ c, images }: { c: Content; images: Images }) {
           </button>
         ))}
       </div>
-      <H>Speaker notes · slide {i + 1}</H>
+      <H>{tr("Speaker notes · slide {n}", { n: i + 1 })}</H>
       <p className="text-base leading-relaxed text-fg">
         <T path={`slides[${i}].speaker_notes`} text={str(s.speaker_notes)} />
       </p>
@@ -411,7 +412,7 @@ function Video({ c, images, video }: { c: Content; images: Images; video?: { src
         {scenes.map((s, i) => (
           <div key={i} className={cx("grid gap-3 rounded-lg border border-border p-3", images[`scene-${str(s.scene_number)}`] ? "sm:grid-cols-[220px_1fr]" : "sm:grid-cols-[110px_1fr]")}>
             <div>
-              <Illustration src={images[`scene-${str(s.scene_number)}`]} alt={`Scene ${str(s.scene_number)} frame`} className="mb-2 aspect-video rounded-md" />
+              <Illustration src={images[`scene-${str(s.scene_number)}`]} alt={tr("Scene {n} frame", { n: str(s.scene_number) })} className="mb-2 aspect-video rounded-md" />
               <p className="text-xs font-bold">Scene {str(s.scene_number)}</p>
               <p className="inline-flex items-center gap-1 text-2xs text-muted tabular-nums">
                 <Clock size={11} /> {str(s.start_sec)}–{str(s.end_sec)}s
@@ -422,15 +423,15 @@ function Video({ c, images, video }: { c: Content; images: Images; video?: { src
                 <T path={`scenes[${i}].title`} text={str(s.title)} />
               </p>
               <p className="text-muted">
-                <b className="text-fg">Visual:</b> <T path={`scenes[${i}].visual_description`} text={str(s.visual_description)} />
+                <b className="text-fg">{tr("Visual:")}</b> <T path={`scenes[${i}].visual_description`} text={str(s.visual_description)} />
               </p>
               {str(s.on_screen_text) && (
                 <p className="text-muted">
-                  <b className="text-fg">On screen:</b> <T path={`scenes[${i}].on_screen_text`} text={str(s.on_screen_text)} />
+                  <b className="text-fg">{tr("On screen:")}</b> <T path={`scenes[${i}].on_screen_text`} text={str(s.on_screen_text)} />
                 </p>
               )}
               <p>
-                <b>Narration:</b> <T path={`scenes[${i}].narration`} text={str(s.narration)} />
+                <b>{tr("Narration:")}</b> <T path={`scenes[${i}].narration`} text={str(s.narration)} />
               </p>
               <p className="text-2xs text-subtle">
                 {str(s.camera_direction)} · {str(s.audio_cue)}
@@ -440,7 +441,7 @@ function Video({ c, images, video }: { c: Content; images: Images; video?: { src
         ))}
       </div>
       <p className="mt-4 text-xs">
-        <b>Call to action:</b> <T path="call_to_action" text={str(c.call_to_action)} />
+        <b>{tr("Call to action:")}</b> <T path="call_to_action" text={str(c.call_to_action)} />
       </p>
     </div>
   );

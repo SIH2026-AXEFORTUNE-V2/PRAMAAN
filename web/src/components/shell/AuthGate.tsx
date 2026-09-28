@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { Button } from "../ui/Button";
 import { TextInput } from "../ui/misc";
 import { BrandMark } from "./Brand";
+import { tr } from "@/i18n";
 
 function SignIn({ onDone }: { onDone: () => void }) {
   const [password, setPassword] = useState("");
@@ -31,16 +32,16 @@ function SignIn({ onDone }: { onDone: () => void }) {
           <BrandMark size={40} />
           <div className="leading-tight">
             <p className="text-lg font-bold tracking-[0.14em] text-fg">PRAMAAN</p>
-            <p className="text-sm text-muted">AI Transformation Workspace</p>
+            <p className="text-sm text-muted">{tr("AI Transformation Workspace")}</p>
           </div>
         </div>
         <form onSubmit={submit} className="rounded-2xl bg-surface p-7 ring-1 ring-border" aria-labelledby="signin-title">
           <h1 id="signin-title" className="text-xl font-semibold text-fg">
-            Sign in to the workspace
+            {tr("Sign in to the workspace")}
           </h1>
-          <p className="mt-2 text-sm text-muted">This workspace is private. Enter the access password your team shared with you.</p>
+          <p className="mt-2 text-sm text-muted">{tr("This workspace is private. Enter the access password your team shared with you.")}</p>
           <label className="mt-6 block text-sm font-medium text-fg">
-            Access password
+            {tr("Access password")}
             <TextInput
               type="password"
               autoComplete="current-password"
@@ -58,11 +59,11 @@ function SignIn({ onDone }: { onDone: () => void }) {
             </p>
           )}
           <Button type="submit" variant="primary" size="md" className="mt-5 h-11 w-full" loading={pending} disabled={!password}>
-            Sign in
+            {tr("Sign in")}
           </Button>
           <p className="mt-5 flex items-start gap-2 border-t border-border pt-4 text-xs text-muted">
             <Lock size={13} className="mt-0.5 shrink-0" />
-            Your session lasts 12 hours on this browser. Uploaded sources are visible only to people signed in to this workspace.
+            {tr("Your session lasts 12 hours on this browser. Uploaded sources are visible only to people signed in to this workspace.")}
           </p>
         </form>
       </div>

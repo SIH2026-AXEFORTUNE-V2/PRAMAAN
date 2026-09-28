@@ -29,6 +29,7 @@ export function Select({
   variant = "chip",
   className,
   align = "left",
+  display = (v: string) => v,
 }: {
   value: string;
   options: string[];
@@ -39,6 +40,7 @@ export function Select({
   variant?: "chip" | "field";
   className?: string;
   align?: "left" | "right";
+  display?: (v: string) => string;
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -78,7 +80,7 @@ export function Select({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={id}
-        aria-label={`${label}: ${value}`}
+        aria-label={`${label}: ${display(value)}`}
         onClick={() => setOpen((o) => !o)}
         onKeyDown={onKey}
         className={cx(
@@ -93,10 +95,10 @@ export function Select({
         {variant === "chip" ? (
           <span className="min-w-0 flex-1 leading-tight">
             <span className="block text-2xs text-subtle">{label}</span>
-            <span className="block truncate text-sm font-semibold text-fg">{value}</span>
+            <span className="block truncate text-sm font-semibold text-fg">{display(value)}</span>
           </span>
         ) : (
-          <span className="min-w-0 flex-1 truncate">{value}</span>
+          <span className="min-w-0 flex-1 truncate">{display(value)}</span>
         )}
         <ChevronDown size={14} className={cx("shrink-0 text-subtle transition-transform", open && "rotate-180")} aria-hidden />
       </button>
@@ -128,7 +130,7 @@ export function Select({
                 i === active ? "bg-surface-3 text-fg" : "text-muted",
               )}
             >
-              <span className="flex-1">{o}</span>
+              <span className="flex-1">{display(o)}</span>
               {o === value && <Check size={13} className="text-accent" aria-hidden />}
             </li>
           ))}

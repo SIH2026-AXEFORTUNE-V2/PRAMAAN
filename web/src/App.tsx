@@ -2,8 +2,10 @@ import { lazy, Suspense } from "react";
 import { createBrowserRouter, Link, Navigate, RouterProvider } from "react-router-dom";
 import { AppShell } from "@/components/shell/AppShell";
 import { AuthGate } from "@/components/shell/AuthGate";
+import { LanguageRoot } from "@/i18n/LanguageRoot";
 import { EmptyState, Skeleton } from "@/components/ui/misc";
 import { WorkspacePage } from "@/pages/WorkspacePage";
+import { tr } from "@/i18n";
 
 const ArtifactPage = lazy(() => import("@/pages/ArtifactPage").then((m) => ({ default: m.ArtifactPage })));
 const ArtifactsPage = lazy(() => import("@/pages/ArtifactsPage").then((m) => ({ default: m.ArtifactsPage })));
@@ -44,9 +46,9 @@ const router = createBrowserRouter([
         element: (
           <EmptyState
             className="h-full"
-            title="Page not found"
-            body="This route does not exist."
-            action={<Link to="/workspace" className="text-xs font-semibold text-accent hover:underline">Go to workspace</Link>}
+            title={tr("Page not found")}
+            body={tr("This route does not exist.")}
+            action={<Link to="/workspace" className="text-xs font-semibold text-accent hover:underline">{tr("Go to workspace")}</Link>}
           />
         ),
       },
@@ -56,8 +58,10 @@ const router = createBrowserRouter([
 
 export function App() {
   return (
-    <AuthGate>
-      <RouterProvider router={router} />
-    </AuthGate>
+    <LanguageRoot>
+      <AuthGate>
+        <RouterProvider router={router} />
+      </AuthGate>
+    </LanguageRoot>
   );
 }

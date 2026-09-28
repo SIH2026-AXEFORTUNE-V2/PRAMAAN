@@ -11,12 +11,13 @@ import { useDraft } from "@/store/draft";
 import { Button } from "../ui/Button";
 import { TextArea, TextInput } from "../ui/misc";
 import { PendingSourceCard } from "./SourceCard";
+import { tr } from "@/i18n";
 
 const ACCEPT = ".pdf,.docx,.pptx,.txt,.md,.html,.htm,.csv,.json,image/*,audio/*,video/*";
 
 export function OutputChips({ selected, onToggle, disabled }: { selected: OutputType[]; onToggle: (o: OutputType) => void; disabled?: boolean }) {
   return (
-    <div className="flex flex-wrap gap-1.5" role="group" aria-label="Requested outputs">
+    <div className="flex flex-wrap gap-1.5" role="group" aria-label={tr("Requested outputs")}>
       {OUTPUT_ORDER.map((o) => {
         const on = selected.includes(o);
         return (
@@ -52,7 +53,7 @@ export function Composer() {
   const [mode, setMode] = useState<"none" | "url" | "text">(d.url ? "url" : d.text ? "text" : "none");
   const [drag, setDrag] = useState(false);
   const [samples, setSamples] = useState<DemoSource[]>([]);
-  const { run, pending } = useAction(api.create, { errorTitle: "Could not start the transformation" });
+  const { run, pending } = useAction(api.create, { errorTitle: tr("Could not start the transformation") });
 
   useEffect(() => {
     api.samples().then(setSamples).catch(() => setSamples([]));
@@ -73,7 +74,7 @@ export function Composer() {
   const addFiles = (list: FileList | File[]) => {
     const arr = Array.from(list);
     const tooBig = arr.filter((f) => f.size > maxMb * 1024 * 1024);
-    if (tooBig.length) toast({ tone: "danger", title: "File too large", body: `${tooBig.map((f) => f.name).join(", ")} exceeds ${maxMb} MB.` });
+    if (tooBig.length) toast({ tone: "danger", title: tr("File too large"), body: tr("{files} exceeds {n} MB.", { files: tooBig.map((f) => f.name).join(", "), n: maxMb }) });
     d.addFiles(arr.filter((f) => f.size <= maxMb * 1024 * 1024));
   };
 
@@ -99,7 +100,7 @@ export function Composer() {
     try {
       addFiles([await api.sampleFile(s)]);
     } catch (e) {
-      toast({ tone: "danger", title: "Demo source unavailable", body: (e as Error).message });
+      toast({ tone: "danger", title: tr("Demo source unavailable"), body: (e as Error).message });
     }
   };
 
@@ -129,8 +130,8 @@ export function Composer() {
           {mode === "url" && (
             <div className="flex items-center gap-2">
               <Link2 size={15} className="shrink-0 text-subtle" />
-              <TextInput aria-label="Source URL" placeholder="https://… (article or PDF)" value={d.url} onChange={(e) => d.set({ url: e.target.value })} />
-              <button type="button" aria-label="Remove URL" onClick={() => (d.set({ url: "" }), setMode("none"))} className="rounded p-1 text-subtle hover:text-fg">
+              <TextInput aria-label={tr("Source URL")} placeholder={tr("https://… (article or PDF)")} value={d.url} onChange={(e) => d.set({ url: e.target.value })} />
+              <button type="button" aria-label={tr("Remove URL")} onClick={() => (d.set({ url: "" }), setMode("none"))} className="rounded p-1 text-subtle hover:text-fg">
                 <X size={15} />
               </button>
             </div>
@@ -138,13 +139,13 @@ export function Composer() {
           {mode === "text" && (
             <div className="relative">
               <TextArea
-                aria-label="Pasted source text"
+                aria-label={tr("Pasted source text")}
                 rows={5}
-                placeholder="Paste the source content here…"
+                placeholder={tr("Paste the source content here…")}
                 value={d.text}
                 onChange={(e) => d.set({ text: e.target.value })}
               />
-              <button type="button" aria-label="Remove pasted text" onClick={() => (d.set({ text: "" }), setMode("none"))} className="absolute top-2 right-2 rounded p-1 text-subtle hover:text-fg">
+              <button type="button" aria-label={tr("Remove pasted text")} onClick={() => (d.set({ text: "" }), setMode("none"))} className="absolute top-2 right-2 rounded p-1 text-subtle hover:text-fg">
                 <X size={14} />
               </button>
             </div>
@@ -153,10 +154,10 @@ export function Composer() {
       )}
       <div className="p-3">
         <TextArea
-          aria-label="Request"
+          aria-label={tr("Request")}
           rows={2}
           className="border-0 px-1 text-sm shadow-none focus:ring-0"
-          placeholder="Describe what to create, e.g. “Generate an executive summary, advisory, infographic and presentation from this report.”"
+          placeholder={tr("Describe what to create, e.g. “Generate an executive summary, advisory, infographic and presentation from this report.”")}
           value={d.request}
           onChange={(e) => d.set({ request: e.target.value })}
           onKeyDown={(e) => {
@@ -170,16 +171,16 @@ export function Composer() {
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <input ref={fileRef} type="file" multiple accept={ACCEPT} className="hidden" onChange={(e) => e.target.files && addFiles(e.target.files)} />
           <Button size="sm" variant="secondary" icon={<Paperclip size={14} />} onClick={() => fileRef.current?.click()}>
-            Upload
+            {tr("Upload")}
           </Button>
           <Button size="sm" variant={mode === "url" ? "subtle" : "ghost"} icon={<Link2 size={14} />} onClick={() => setMode(mode === "url" ? "none" : "url")}>
-            URL
+            {tr("URL")}
           </Button>
           <Button size="sm" variant={mode === "text" ? "subtle" : "ghost"} icon={<Type size={14} />} onClick={() => setMode(mode === "text" ? "none" : "text")}>
-            Paste text
+            {tr("Paste text")}
           </Button>
           <div className="flex-1" />
-          <span className="hidden text-2xs text-subtle sm:inline">{hasSource ? "⌘/Ctrl + Enter" : "Add a source to begin"}</span>
+          <span className="hidden text-2xs text-subtle sm:inline">{hasSource ? "⌘/Ctrl + Enter" : tr("Add a source to begin")}</span>
           <Button
             variant="primary"
             size="md"
@@ -187,15 +188,15 @@ export function Composer() {
             disabled={!hasSource || outputs.length === 0}
             icon={!pending && <ArrowUp size={15} />}
             onClick={() => void submit()}
-            title={!hasSource ? "Add a source first" : outputs.length === 0 ? "Choose at least one output" : "Start transformation"}
+            title={!hasSource ? tr("Add a source first") : outputs.length === 0 ? tr("Choose at least one output") : tr("Start transformation")}
           >
-            Transform
+            {tr("Transform")}
           </Button>
         </div>
       </div>
       {samples.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-t border-border bg-surface-2 px-3 py-2 rounded-b-2xl">
-          <span className="text-2xs text-subtle">Demo sources (fictional):</span>
+          <span className="text-2xs text-subtle">{tr("Demo sources (fictional):")}</span>
           {samples.map((s) => (
             <button
               key={s.file}

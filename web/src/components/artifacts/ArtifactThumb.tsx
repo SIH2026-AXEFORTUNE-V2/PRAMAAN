@@ -2,6 +2,7 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { arr, obj, str } from "@/lib/content";
 import type { Artifact } from "@/lib/types";
+import { tr } from "@/i18n";
 
 /* Thumbnails are drawn as paper on a desk, so they stay paper-white in both themes. */
 const PAPER = "absolute inset-x-4 top-4 bottom-0 overflow-hidden rounded-t-md bg-paper text-paper-ink shadow-md";
@@ -30,12 +31,12 @@ export function ArtifactThumb({ tid, a }: { tid: string; a: Artifact }) {
           {a.status === "failed" ? (
             <>
               <AlertTriangle size={20} className="text-danger" />
-              <span className="text-xs text-danger">Agent execution interrupted</span>
+              <span className="text-xs text-danger">{tr("Agent execution interrupted")}</span>
             </>
           ) : (
             <>
               <Loader2 size={20} className="animate-spin text-accent" />
-              <span className="text-xs text-muted">{a.status === "queued" ? "Waiting for evidence" : "Writing from evidence"}</span>
+              <span className="text-xs text-muted">{a.status === "queued" ? tr("Waiting for evidence") : tr("Writing from evidence")}</span>
             </>
           )}
         </div>

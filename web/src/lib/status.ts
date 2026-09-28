@@ -1,56 +1,57 @@
 /* Single mapping from domain states to presentation (tone + label). */
+import { tr } from "@/i18n";
 import type { ArtifactStatus, ClaimStatus, PolicyAction, RefStatus, TaskStatus, TransformationStatus } from "./types";
 
 export type Tone = "neutral" | "info" | "success" | "warning" | "danger";
 
 export const TASK_STATUS: Record<TaskStatus, { tone: Tone; label: string }> = {
-  queued: { tone: "neutral", label: "Queued" },
-  running: { tone: "info", label: "Running" },
-  completed: { tone: "success", label: "Completed" },
-  failed: { tone: "danger", label: "Failed" },
-  blocked: { tone: "danger", label: "Blocked" },
-  needs_review: { tone: "warning", label: "Needs review" },
+  queued: { tone: "neutral", get label() { return tr("Queued"); } },
+  running: { tone: "info", get label() { return tr("Running"); } },
+  completed: { tone: "success", get label() { return tr("Completed"); } },
+  failed: { tone: "danger", get label() { return tr("Failed"); } },
+  blocked: { tone: "danger", get label() { return tr("Blocked"); } },
+  needs_review: { tone: "warning", get label() { return tr("Needs review"); } },
 };
 
 export const ARTIFACT_STATUS: Record<ArtifactStatus, { tone: Tone; label: string }> = {
-  queued: { tone: "neutral", label: "Queued" },
-  generating: { tone: "info", label: "Generating" },
-  generated: { tone: "info", label: "Generated" },
-  verified: { tone: "success", label: "Verified" },
-  needs_review: { tone: "warning", label: "Needs review" },
-  blocked: { tone: "danger", label: "Blocked" },
-  stale: { tone: "warning", label: "Evidence changed" },
-  approved: { tone: "success", label: "Approved" },
-  rejected: { tone: "danger", label: "Rejected" },
-  exported: { tone: "success", label: "Exported" },
-  failed: { tone: "danger", label: "Failed" },
+  queued: { tone: "neutral", get label() { return tr("Queued"); } },
+  generating: { tone: "info", get label() { return tr("Generating"); } },
+  generated: { tone: "info", get label() { return tr("Generated"); } },
+  verified: { tone: "success", get label() { return tr("Verified"); } },
+  needs_review: { tone: "warning", get label() { return tr("Needs review"); } },
+  blocked: { tone: "danger", get label() { return tr("Blocked"); } },
+  stale: { tone: "warning", get label() { return tr("Evidence changed"); } },
+  approved: { tone: "success", get label() { return tr("Approved"); } },
+  rejected: { tone: "danger", get label() { return tr("Rejected"); } },
+  exported: { tone: "success", get label() { return tr("Exported"); } },
+  failed: { tone: "danger", get label() { return tr("Failed"); } },
 };
 
 export const TRANSFORMATION_STATUS: Record<TransformationStatus, { tone: Tone; label: string }> = {
-  running: { tone: "info", label: "Running" },
-  awaiting_review: { tone: "warning", label: "Awaiting review" },
-  approved: { tone: "success", label: "Approved" },
-  reviewed: { tone: "neutral", label: "Reviewed" },
-  partial: { tone: "warning", label: "Partial" },
-  failed: { tone: "danger", label: "Failed" },
+  running: { tone: "info", get label() { return tr("Running"); } },
+  awaiting_review: { tone: "warning", get label() { return tr("Awaiting review"); } },
+  approved: { tone: "success", get label() { return tr("Approved"); } },
+  reviewed: { tone: "neutral", get label() { return tr("Reviewed"); } },
+  partial: { tone: "warning", get label() { return tr("Partial"); } },
+  failed: { tone: "danger", get label() { return tr("Failed"); } },
 };
 
 export const CLAIM_STATUS: Record<ClaimStatus, { tone: Tone; label: string }> = {
-  verified: { tone: "success", label: "Verified" },
-  human_verified: { tone: "success", label: "Human verified" },
-  needs_review: { tone: "warning", label: "Needs review" },
-  conflict: { tone: "danger", label: "Source conflict" },
-  unsupported: { tone: "danger", label: "Unsupported" },
-  superseded: { tone: "neutral", label: "Superseded" },
-  rejected: { tone: "neutral", label: "Rejected" },
+  verified: { tone: "success", get label() { return tr("Verified"); } },
+  human_verified: { tone: "success", get label() { return tr("Human verified"); } },
+  needs_review: { tone: "warning", get label() { return tr("Needs review"); } },
+  conflict: { tone: "danger", get label() { return tr("Source conflict"); } },
+  unsupported: { tone: "danger", get label() { return tr("Unsupported"); } },
+  superseded: { tone: "neutral", get label() { return tr("Superseded"); } },
+  rejected: { tone: "neutral", get label() { return tr("Rejected"); } },
 };
 
 export const REF_STATUS: Record<RefStatus, { tone: Tone; label: string; symbol: string }> = {
-  grounded: { tone: "success", label: "Evidence grounded", symbol: "✓" },
-  review: { tone: "warning", label: "Requires review", symbol: "⚠" },
-  drift: { tone: "danger", label: "Contradicts evidence", symbol: "✕" },
-  unsupported: { tone: "danger", label: "Unsupported", symbol: "✕" },
-  uncertainty: { tone: "danger", label: "Uncertainty strengthened", symbol: "✕" },
+  grounded: { tone: "success", get label() { return tr("Evidence grounded"); }, symbol: "✓" },
+  review: { tone: "warning", get label() { return tr("Requires review"); }, symbol: "⚠" },
+  drift: { tone: "danger", get label() { return tr("Contradicts evidence"); }, symbol: "✕" },
+  unsupported: { tone: "danger", get label() { return tr("Unsupported"); }, symbol: "✕" },
+  uncertainty: { tone: "danger", get label() { return tr("Uncertainty strengthened"); }, symbol: "✕" },
 };
 
 export const ACTION_TONE: Record<PolicyAction, Tone> = {
@@ -63,24 +64,24 @@ export const ACTION_TONE: Record<PolicyAction, Tone> = {
 };
 
 export const MODALITY_LABEL: Record<string, string> = {
-  confirmed: "Confirmed",
-  probable: "Probable",
-  possible: "Possible",
-  suspected: "Suspected",
-  unverified: "Unverified",
-  estimated: "Estimated",
-  reported: "Reported",
-  alleged: "Alleged",
+  get confirmed() { return tr("Confirmed"); },
+  get probable() { return tr("Probable"); },
+  get possible() { return tr("Possible"); },
+  get suspected() { return tr("Suspected"); },
+  get unverified() { return tr("Unverified"); },
+  get estimated() { return tr("Estimated"); },
+  get reported() { return tr("Reported"); },
+  get alleged() { return tr("Alleged"); },
 };
 
 export const SECURITY_CLASS_LABEL: Record<string, string> = {
-  pii: "Personal data",
-  credential: "Credentials & secrets",
-  infrastructure: "Internal infrastructure",
-  threat_indicator: "Threat indicators",
-  location: "Sensitive location",
-  marking: "Confidential marking",
-  injection: "Prompt injection",
+  get pii() { return tr("Personal data"); },
+  get credential() { return tr("Credentials & secrets"); },
+  get infrastructure() { return tr("Internal infrastructure"); },
+  get threat_indicator() { return tr("Threat indicators"); },
+  get location() { return tr("Sensitive location"); },
+  get marking() { return tr("Confidential marking"); },
+  get injection() { return tr("Prompt injection"); },
 };
 
 export const TONE_CLASSES: Record<Tone, { text: string; bg: string; border: string; dot: string }> = {

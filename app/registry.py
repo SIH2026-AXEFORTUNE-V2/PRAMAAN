@@ -28,11 +28,12 @@ AGENTS = [
      "inputs": ["Claim ledger", "Contract"], "outputs": ["Infographic"], "kind": "specialist"},
     {"name": "Video Package Agent", "role": "Script, storyboard, narration and subtitles.", "capability": "text_reasoning",
      "inputs": ["Claim ledger", "Contract"], "outputs": ["Video Package"], "kind": "specialist"},
-    {"name": "Visual Agent", "role": "Generates illustrative images from writers' visual suggestions. Prompts are scrubbed of "
-     "sensitive data and figures; images are labelled and never treated as evidence.", "capability": "image_generation",
-     "inputs": ["Visual suggestions"], "outputs": ["Illustrations"], "kind": "specialist"},
+    {"name": "Visual Agent", "role": "Generates illustrative images from writers' visual suggestions, and designs the infographic "
+     "from its released text, then reads the design back to verify every line and figure. Illustration prompts are scrubbed "
+     "of sensitive data and figures; images are labelled and never treated as evidence.", "capability": "image_generation",
+     "inputs": ["Visual suggestions", "Released infographic"], "outputs": ["Illustrations", "Designed infographic"], "kind": "specialist"},
     {"name": "Video Production Agent", "role": "Renders the verified video package into one MP4: motion clips or animated "
-     "stills, Aura-2 narration of the released script, burned-in subtitles and an AI-generated mark.",
+     "stills, neural narration of the released script, burned-in subtitles and an AI-generated mark.",
      "capability": "video_production", "inputs": ["Video package", "Illustrations"], "outputs": ["MP4"], "kind": "specialist"},
     {"name": "Translation Agent", "role": "Language-constrained generation: specialist agents write natively in the contract "
      "language while facts stay locked to the English evidence ledger.", "capability": "translation",
@@ -54,6 +55,32 @@ AGENTS = [
 def model_router(live) -> list[dict]:
     gw = "Self-hosted gateway" if config.MODEL_GATEWAY_URL else "Hugging Face Inference Providers"
     on = live is not None
+    if config.LLM_PROVIDER == "openai":
+        def o(cap, label, models, status, via, note=""):
+            return {"capability": cap, "label": label, "models": models, "status": status, "via": via, "note": note}
+        fb = " Falls back to GroqCloud if OpenAI is unavailable." if config.GROQ_API_KEY else ""
+        return [
+            o("text_reasoning", "Text reasoning & generation", config.OPENAI_TEXT_MODELS, "active", "OpenAI",
+              "First model serves the call; the next takes over if it fails." + fb),
+            o("translation", "Translation", config.OPENAI_TEXT_MODELS[:1], "active", "OpenAI", "Language-constrained generation."),
+            o("multimodal_understanding", "Multimodal understanding / OCR", [config.OPENAI_VISION_MODEL], "active", "OpenAI",
+              "Images, scanned PDFs and the read-back check of designed infographics."),
+            o("speech_to_text", "Speech-to-text", [config.OPENAI_ASR_MODEL], "active", "OpenAI"),
+            o("document_parsing", "Document parsing", ["pypdf", "pypdfium2", "python-docx", "python-pptx"], "active", "Local"),
+            o("policy_engine", "Security policy engine", ["PRAMAAN rules"], "active", "Local", "Deterministic detectors."),
+            o("deterministic_verifier", "Verification", ["PRAMAAN verifier"], "active", "Local", "Deterministic checks."),
+            o("hash_chain", "Provenance", ["SHA-256 hash chain"], "active", "Local"),
+            o("image_generation", "Illustrations (Visual Agent)", [config.OPENAI_IMAGE_MODEL], "active", "OpenAI",
+              "Illustrative only; never used as evidence."),
+            o("infographic_design", "Designed infographics", [config.OPENAI_INFOGRAPHIC_MODEL], "active", "OpenAI",
+              "Draws only the released text, then is read back and checked line by line."),
+            o("text_to_speech", "Narration (text-to-speech)", [config.OPENAI_TTS_MODEL], "active", "OpenAI",
+              "Multilingual; reads only the verified, released video script."),
+            o("video_generation", "Motion video clips", [config.VIDEO_MODEL] if config.POLLINATIONS_API_KEY else [],
+              "active" if config.POLLINATIONS_API_KEY else "not_configured", "Pollinations" if config.POLLINATIONS_API_KEY else "—",
+              "Without it, scenes use animated stills; the MP4 still renders."),
+            o("embedding", "Embeddings (retrieval)", [], "not_configured", "—", "Not needed for single-source transformation."),
+        ]
     if config.LLM_PROVIDER == "groq":
         vis = "active" if config.HF_TOKEN else "not_configured"
 

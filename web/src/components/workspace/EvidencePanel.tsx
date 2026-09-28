@@ -11,23 +11,24 @@ import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card, CardHeader } from "../ui/Card";
 import { EmptyState, Hash, TextInput } from "../ui/misc";
+import { tr } from "@/i18n";
 
 function ConflictResolver({ t, c }: { t: Transformation; c: SourceConflict }) {
   const [choice, setChoice] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const setT = useApp((s) => s.setTransformation);
   const toast = useApp((s) => s.toast);
-  const { run, pending } = useAction(api.resolveSourceConflict, { errorTitle: "Could not resolve conflict" });
+  const { run, pending } = useAction(api.resolveSourceConflict, { errorTitle: tr("Could not resolve conflict") });
   const resolved = c.status === "resolved";
   return (
     <div className={cx("rounded-xl border p-4", resolved ? "border-border" : "border-warning-line bg-warning-soft/40")}>
       <div className="flex flex-wrap items-center gap-2">
         <Scale size={15} className={resolved ? "text-success" : "text-warning"} />
         <p className="text-xs font-bold">Source conflict · {c.id}</p>
-        <Badge tone={resolved ? "success" : "warning"}>{resolved ? "Resolved" : "Unresolved"}</Badge>
+        <Badge tone={resolved ? "success" : "warning"}>{resolved ? tr("Resolved") : tr("Unresolved")}</Badge>
       </div>
       <p className="mt-1 text-xs text-muted">
-        Claim: <b className="text-fg">{c.attribute}</b>
+        {tr("Claim")}: <b className="text-fg">{c.attribute}</b>
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         {c.values.map((v) => {
@@ -64,7 +65,7 @@ function ConflictResolver({ t, c }: { t: Transformation; c: SourceConflict }) {
         </p>
       ) : (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <TextInput className="max-w-sm flex-1" placeholder="Reason for decision (required)" value={note} onChange={(e) => setNote(e.target.value)} aria-label="Resolution reason" />
+          <TextInput className="max-w-sm flex-1" placeholder={tr("Reason for decision (required)")} value={note} onChange={(e) => setNote(e.target.value)} aria-label={tr("Resolution reason")} />
           <Button
             variant="primary"
             size="sm"
@@ -74,13 +75,13 @@ function ConflictResolver({ t, c }: { t: Transformation; c: SourceConflict }) {
               const r = await run(t.id, c.id, choice!, note);
               if (r) {
                 setT(r.transformation);
-                toast({ tone: "success", title: "Conflict resolved", body: `${r.dependents.length} dependent artefact(s) marked for regeneration.` });
+                toast({ tone: "success", title: tr("Conflict resolved"), body: tr("{n} dependent artefact(s) marked for regeneration.", { n: r.dependents.length }) });
               }
             }}
           >
-            Confirm value
+            {tr("Confirm value")}
           </Button>
-          <span className="text-2xs text-subtle">Human review required — never resolved automatically.</span>
+          <span className="text-2xs text-subtle">{tr("Human review required — never resolved automatically.")}</span>
         </div>
       )}
     </div>
@@ -98,7 +99,7 @@ export function EvidencePanel({ t }: { t: Transformation }) {
   const counts = t.claims.reduce<Record<string, number>>((acc, c) => ((acc[c.status] = (acc[c.status] ?? 0) + 1), acc), {});
 
   if (!t.claims.length) {
-    return <EmptyState title="Evidence state not built yet" body="The Evidence Extraction Agent is reading the sources. Claims appear here as soon as every quote has been checked." />;
+    return <EmptyState title={tr("Evidence state not built yet")} body={tr("The Evidence Extraction Agent is reading the sources. Claims appear here as soon as every quote has been checked.")} />;
   }
   return (
     <div className="space-y-4">
@@ -107,11 +108,11 @@ export function EvidencePanel({ t }: { t: Transformation }) {
       ))}
       <Card>
         <CardHeader
-          title="Canonical evidence state"
-          subtitle="Claim → Evidence → Source → Location. Every artefact derives its facts from this ledger; click a row for full traceability."
+          title={tr("Canonical evidence state")}
+          subtitle={tr("Claim → Evidence → Source → Location. Every artefact derives its facts from this ledger; click a row for full traceability.")}
           actions={
             <span className="flex items-center gap-2 text-2xs text-muted">
-              State hash <Hash value={t.provenance.evidence_hash} />
+              {tr("State hash")} <Hash value={t.provenance.evidence_hash} />
             </span>
           }
         />
@@ -126,13 +127,13 @@ export function EvidencePanel({ t }: { t: Transformation }) {
           <table className="w-full min-w-[860px] text-xs">
             <thead>
               <tr className="border-b border-border text-left text-2xs text-subtle">
-                <th className="px-4 py-2 font-semibold">ID</th>
-                <th className="px-2 py-2 font-semibold">Claim</th>
-                <th className="px-2 py-2 font-semibold">Certainty</th>
-                <th className="px-2 py-2 font-semibold">Source · location</th>
-                <th className="px-2 py-2 font-semibold">Status</th>
-                <th className="px-2 py-2 font-semibold" title="Dependency graph: which artefacts state this claim">
-                  Used by
+                <th className="px-4 py-2 font-semibold">{tr("ID")}</th>
+                <th className="px-2 py-2 font-semibold">{tr("Claim")}</th>
+                <th className="px-2 py-2 font-semibold">{tr("Certainty")}</th>
+                <th className="px-2 py-2 font-semibold">{tr("Source · location")}</th>
+                <th className="px-2 py-2 font-semibold">{tr("Status")}</th>
+                <th className="px-2 py-2 font-semibold" title={tr("Dependency graph: which artefacts state this claim")}>
+                  {tr("Used by")}
                 </th>
               </tr>
             </thead>

@@ -15,6 +15,7 @@ import { Select } from "../ui/Menu";
 import { Drawer } from "../ui/Overlay";
 import { TextArea, TextInput } from "../ui/misc";
 import { SourceViewer } from "./SourceViewer";
+import { tr } from "@/i18n";
 
 function Check3({ ok, label, detail }: { ok: boolean | null; label: string; detail?: string }) {
   return (
@@ -65,19 +66,19 @@ function EditClaim({ t, claim, onDone }: { t: Transformation; claim: Claim; onDo
   const [note, setNote] = useState("");
   const setT = useApp((s) => s.setTransformation);
   const toast = useApp((s) => s.toast);
-  const { run, pending } = useAction(api.updateClaim, { errorTitle: "Could not update claim" });
+  const { run, pending } = useAction(api.updateClaim, { errorTitle: tr("Could not update claim") });
   return (
     <div className="space-y-3 rounded-lg border border-accent-line bg-accent-soft/40 p-3.5">
-      <p className="text-xs font-semibold">Correct this claim</p>
+      <p className="text-xs font-semibold">{tr("Correct this claim")}</p>
       <label className="block text-2xs text-muted">
-        Value
+        {tr("Value")}
         <TextInput value={value} onChange={(e) => setValue(e.target.value)} className="mt-1" />
       </label>
       <div className="text-2xs text-muted">
-        Certainty
+        {tr("Certainty")}
         <Select
           variant="field"
-          label="Certainty"
+          label={tr("Certainty")}
           value={MODALITY_LABEL[modality]}
           options={Object.values(MODALITY_LABEL)}
           onChange={(v) => setModality((Object.keys(MODALITY_LABEL).find((k) => MODALITY_LABEL[k] === v) ?? "confirmed") as Modality)}
@@ -85,12 +86,12 @@ function EditClaim({ t, claim, onDone }: { t: Transformation; claim: Claim; onDo
         />
       </div>
       <label className="block text-2xs text-muted">
-        Reason (recorded in audit and provenance)
-        <TextArea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Corrected after SOC log review" className="mt-1" />
+        {tr("Reason (recorded in audit and provenance)")}
+        <TextArea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("e.g. Corrected after SOC log review")} className="mt-1" />
       </label>
       <div className="flex justify-end gap-2">
         <Button size="sm" variant="ghost" onClick={onDone}>
-          Cancel
+          {tr("Cancel")}
         </Button>
         <Button
           size="sm"
@@ -103,16 +104,16 @@ function EditClaim({ t, claim, onDone }: { t: Transformation; claim: Claim; onDo
               setT(r.transformation);
               toast({
                 tone: r.dependents.length ? "warning" : "success",
-                title: "Claim updated",
+                title: tr("Claim updated"),
                 body: r.dependents.length
-                  ? `${r.dependents.length} dependent artefact(s) need regeneration: ${r.dependents.map((d) => OUTPUT_SHORT[d]).join(", ")}.`
-                  : "No artefacts depend on this claim.",
+                  ? tr("{n} dependent artefact(s) need regeneration: {list}.", { n: r.dependents.length, list: r.dependents.map((d) => OUTPUT_SHORT[d]).join(", ") })
+                  : tr("No artefacts depend on this claim."),
               });
               onDone();
             }
           }}
         >
-          Save & find dependents
+          {tr("Save & find dependents")}
         </Button>
       </div>
     </div>
@@ -157,7 +158,7 @@ export function ClaimDrawer() {
       }}
       title={
         <span className="flex items-center gap-2">
-          Why did the AI say this?
+          {tr("Why did the AI say this?")}
           <Badge tone="info">{claim.claim_id}</Badge>
         </span>
       }
@@ -189,12 +190,12 @@ export function ClaimDrawer() {
                     <AlertTriangle size={14} className="mt-0.5 shrink-0" />
                     <span>
                       <span className="font-semibold">
-                        {i.kind === "drift" ? "Claim conflict" : i.kind === "uncertainty" ? "Uncertainty strengthening detected" : "Unsupported"}
+                        {i.kind === "drift" ? tr("Claim conflict") : i.kind === "uncertainty" ? tr("Uncertainty strengthening detected") : tr("Unsupported")}
                       </span>
                       <span className="block text-2xs">{i.detail}</span>
                       {i.kind === "uncertainty" && (
                         <span className="block text-2xs">
-                          Source confidence: <b>{MODALITY_LABEL[i.expected ?? ""] ?? i.expected}</b> · Generated confidence:{" "}
+                          {tr("Source confidence")}: <b>{MODALITY_LABEL[i.expected ?? ""] ?? i.expected}</b> · {tr("Generated confidence")}:{" "}
                           <b>{MODALITY_LABEL[i.found ?? ""] ?? i.found}</b>
                         </span>
                       )}
@@ -207,7 +208,7 @@ export function ClaimDrawer() {
         )}
 
         <section>
-          <SectionLabel right={<Badge tone={cs.tone}>{cs.label}</Badge>}>Canonical claim</SectionLabel>
+          <SectionLabel right={<Badge tone={cs.tone}>{cs.label}</Badge>}>{tr("Canonical claim")}</SectionLabel>
           <div className="mt-2 rounded-lg border border-border px-3.5 py-3">
             <p className="text-sm font-semibold text-fg">{claim.display_value}</p>
             <p className="text-2xs text-muted">
@@ -218,15 +219,15 @@ export function ClaimDrawer() {
         </section>
 
         <section>
-          <SectionLabel>Evidence</SectionLabel>
+          <SectionLabel>{tr("Evidence")}</SectionLabel>
           <dl className="mt-1.5 divide-y divide-border">
-            <Row k="Source">{claim.source_name}</Row>
-            <Row k="Page">{claim.page ?? "— (not paginated)"}</Row>
-            <Row k="Source text">
+            <Row k={tr("Source")}>{claim.source_name}</Row>
+            <Row k={tr("Page")}>{claim.page ?? "— (not paginated)"}</Row>
+            <Row k={tr("Source text")}>
               <span className="text-muted italic">"{highlight(claim.evidence_text, claim.display_value !== claim.value ? claim.value : claim.value)}"</span>
             </Row>
             {claim.corroborated_by.length > 0 && (
-              <Row k="Corroborated">
+              <Row k={tr("Corroborated")}>
                 {claim.corroborated_by.map((c) => (
                   <span key={c.source_id} className="block">
                     {c.source_name}
@@ -244,7 +245,7 @@ export function ClaimDrawer() {
         {sourceConflict && (
           <section className="rounded-lg border border-warning-line bg-warning-soft px-3.5 py-3">
             <p className="text-xs font-semibold text-warning">
-              Source conflict · {sourceConflict.status === "unresolved" ? "UNRESOLVED" : "Resolved"}
+              {tr("Source conflict")} · {sourceConflict.status === "unresolved" ? tr("Unresolved") : tr("Resolved")}
             </p>
             <ul className="mt-1.5 space-y-1 text-xs">
               {sourceConflict.values.map((v) => (
@@ -253,20 +254,20 @@ export function ClaimDrawer() {
                 </li>
               ))}
             </ul>
-            {sourceConflict.status === "unresolved" && <p className="mt-1.5 text-2xs text-muted">Resolve it from the Evidence tab of the workspace.</p>}
+            {sourceConflict.status === "unresolved" && <p className="mt-1.5 text-2xs text-muted">{tr("Resolve it from the Evidence tab of the workspace.")}</p>}
           </section>
         )}
 
         <section>
-          <SectionLabel>Transformation</SectionLabel>
+          <SectionLabel>{tr("Transformation")}</SectionLabel>
           <dl className="mt-1.5 divide-y divide-border">
-            <Row k="Transformation">{t.id}</Row>
-            <Row k="Extracted by">
+            <Row k={tr("Transformation")}>{t.id}</Row>
+            <Row k={tr("Extracted by")}>
               {claim.extracted_by}
               {claim.model && <span className="text-muted"> · {claim.model}</span>}
             </Row>
             {art && (
-              <Row k="Written by">
+              <Row k={tr("Written by")}>
                 {art.agent}
                 {version && (
                   <span className="text-muted">
@@ -276,32 +277,32 @@ export function ClaimDrawer() {
                 )}
               </Row>
             )}
-            <Row k="Model routing">Selected by the model router (text reasoning)</Row>
+            <Row k={tr("Model routing")}>{tr("Selected by the model router (text reasoning)")}</Row>
           </dl>
         </section>
 
         <section>
-          <SectionLabel>Verification</SectionLabel>
+          <SectionLabel>{tr("Verification")}</SectionLabel>
           <ul className="mt-1.5">
-            <Check3 ok={grounded} label="Source supported" detail={grounded ? "Quote located in the source and contains the value." : claim.grounding_note} />
+            <Check3 ok={grounded} label={tr("Source supported")} detail={grounded ? tr("Quote located in the source and contains the value.") : claim.grounding_note} />
             <Check3
               ok={ref ? drift.length === 0 : !conflict}
-              label={claim.normalized.type === "date" ? "Date consistent" : "Value consistent"}
-              detail={drift[0]?.detail ?? (conflict ? `Cross-output conflict in ${conflict.affected.map((a) => OUTPUT_SHORT[a]).join(", ")}` : undefined)}
+              label={claim.normalized.type === "date" ? tr("Date consistent") : tr("Value consistent")}
+              detail={drift[0]?.detail ?? (conflict ? tr("Cross-output conflict in {list}", { list: conflict.affected.map((a) => OUTPUT_SHORT[a]).join(", ") }) : undefined)}
             />
-            <Check3 ok={ref ? unc.length === 0 : true} label="Certainty preserved" detail={unc[0]?.detail ?? `Source certainty: ${MODALITY_LABEL[claim.modality]}`} />
-            <Check3 ok={ref ? !ref.issues.some((i) => i.kind === "unsupported") : true} label="No unsupported claim" />
+            <Check3 ok={ref ? unc.length === 0 : true} label={tr("Certainty preserved")} detail={unc[0]?.detail ?? tr("Source certainty: {level}", { level: MODALITY_LABEL[claim.modality] })} />
+            <Check3 ok={ref ? !ref.issues.some((i) => i.kind === "unsupported") : true} label={tr("No unsupported claim")} />
             <Check3
               ok={art?.security ? !art.security.blocked : null}
-              label="Security"
-              detail={art?.security ? `${art.security.exposure_label} policy · ${art.security.status}` : "Open from an artefact to see its policy"}
+              label={tr("Security")}
+              detail={art?.security ? tr("{exposure} policy · {status}", { exposure: tr(art.security.exposure_label), status: tr(art.security.status) }) : tr("Open from an artefact to see its policy")}
             />
           </ul>
         </section>
 
         {usedBy.length > 0 && (
           <section>
-            <SectionLabel>Used by (dependency graph)</SectionLabel>
+            <SectionLabel>{tr("Used by (dependency graph)")}</SectionLabel>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {usedBy.map(({ k, n }) => (
                 <Link
@@ -314,17 +315,17 @@ export function ClaimDrawer() {
                 </Link>
               ))}
             </div>
-            <p className="mt-1.5 text-2xs text-subtle">Changing this claim marks only these artefacts for regeneration.</p>
+            <p className="mt-1.5 text-2xs text-subtle">{tr("Changing this claim marks only these artefacts for regeneration.")}</p>
           </section>
         )}
 
         {claim.history.length > 0 && (
           <section>
-            <SectionLabel>History</SectionLabel>
+            <SectionLabel>{tr("History")}</SectionLabel>
             <ul className="mt-1.5 space-y-1 text-2xs text-muted">
               {claim.history.map((h) => (
                 <li key={h.version}>
-                  v{h.version} · {dateTime(h.at)} · {h.by}: {h.before.display_value} → current · "{h.note}"
+                  v{h.version} · {dateTime(h.at)} · {h.by}: {h.before.display_value} → {tr("current")} · "{h.note}"
                 </li>
               ))}
             </ul>
@@ -336,7 +337,7 @@ export function ClaimDrawer() {
             <EditClaim t={t} claim={claim} onDone={() => setEditing(false)} />
           ) : (
             <Button size="sm" icon={<Pencil size={13} />} onClick={() => setEditing(true)} disabled={claim.status === "superseded"}>
-              Correct claim
+              {tr("Correct claim")}
             </Button>
           )}
         </section>

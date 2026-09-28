@@ -3,6 +3,7 @@ import { FileText } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Claim } from "@/lib/types";
 import { Skeleton } from "../ui/misc";
+import { tr } from "@/i18n";
 
 /** Shows where a claim lives in its source: the rendered PDF page with the evidence box, or the text context. */
 export function SourceViewer({ tid, claim }: { tid: string; claim: Claim }) {
@@ -41,7 +42,7 @@ export function SourceViewer({ tid, claim }: { tid: string; claim: Claim }) {
           {!loaded && <Skeleton className="absolute inset-0 rounded-none" />}
           <img
             src={api.pageImageUrl(tid, claim.source_id, claim.page)}
-            alt={`Page ${claim.page} of ${claim.source_name}`}
+            alt={tr("Page {page} of {name}", { page: claim.page ?? "", name: claim.source_name })}
             className="absolute inset-0 h-full w-full bg-white object-contain"
             onLoad={() => setLoaded(true)}
             onError={() => setImgOk(false)}
@@ -55,7 +56,7 @@ export function SourceViewer({ tid, claim }: { tid: string; claim: Claim }) {
                 width: `${((x2 - x1 + pad * 2) / w) * 100}%`,
                 height: `${((y2 - y1 + pad * 2) / h) * 100}%`,
               }}
-              aria-label="Evidence location"
+              aria-label={tr("Evidence location")}
             />
           )}
         </div>
@@ -63,19 +64,19 @@ export function SourceViewer({ tid, claim }: { tid: string; claim: Claim }) {
           <span>
             Page {claim.page} · bbox [{loc.bbox.map((n) => Math.round(n)).join(", ")}]
           </span>
-          <span>pdf points, origin top-left</span>
+          <span>{tr("pdf points, origin top-left")}</span>
         </figcaption>
       </figure>
     );
   }
 
   if (!claim.char_span) {
-    return <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-2xs text-subtle">No location recorded for this claim.</p>;
+    return <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-2xs text-subtle">{tr("No location recorded for this claim.")}</p>;
   }
   return (
     <div className="rounded-lg border border-border bg-surface-2 px-3.5 py-3">
       <div className="mb-2 flex items-center gap-1.5 text-2xs text-subtle">
-        <FileText size={12} /> Characters {claim.char_span[0]}–{claim.char_span[1]}
+        <FileText size={12} /> {tr("Characters {from}–{to}", { from: claim.char_span[0], to: claim.char_span[1] })}
       </div>
       {ctx ? (
         <p className="text-xs leading-relaxed whitespace-pre-wrap text-muted">

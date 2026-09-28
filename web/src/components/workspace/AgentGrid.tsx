@@ -4,10 +4,11 @@ import type { ReactNode } from "react";
 import { cx, duration } from "@/lib/format";
 import { OutputIcon } from "@/lib/outputs";
 import { TASK_STATUS } from "@/lib/status";
-import { latestTasks } from "@/lib/tasks";
+import { agentName, latestTasks, taskDetail, taskTitle } from "@/lib/tasks";
 import type { Task } from "@/lib/types";
 import { StatusIcon } from "../ui/Badge";
 import { ProgressBar } from "../ui/misc";
+import { tr } from "@/i18n";
 
 function agentIcon(t: Task): ReactNode {
   if (t.artifact) return <OutputIcon type={t.artifact} size={17} />;
@@ -43,11 +44,11 @@ export function AgentTaskCard({ task, tid }: { task: Task; tid: string }) {
           {agentIcon(task)}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-fg" title={task.agent}>
-            {task.agent.replace(" Agent", "").replace(" / Critic", "")}
+          <p className="truncate text-sm font-semibold text-fg" title={agentName(task)}>
+            {agentName(task)}
           </p>
-          <p className="truncate text-xs text-muted" title={task.title}>
-            {task.title}
+          <p className="truncate text-xs text-muted" title={taskTitle(task)}>
+            {taskTitle(task)}
           </p>
         </div>
       </div>
@@ -60,14 +61,14 @@ export function AgentTaskCard({ task, tid }: { task: Task; tid: string }) {
           </span>
           {task.seconds !== null && task.status !== "running" && <span className="font-mono text-subtle">{duration(task.seconds)}</span>}
         </div>
-        <p className="mt-0.5 truncate text-xs text-subtle" title={task.error ?? task.detail}>
-          {task.error ?? task.detail}
+        <p className="mt-0.5 truncate text-xs text-subtle" title={taskDetail(task)}>
+          {taskDetail(task)}
         </p>
       </div>
     </div>
   );
   return task.artifact ? (
-    <Link to={`/workspace/${tid}/artifact/${task.artifact}`} className="block h-full rounded-xl" aria-label={`${task.title}: ${st.label}`}>
+    <Link to={`/workspace/${tid}/artifact/${task.artifact}`} className="block h-full rounded-xl" aria-label={`${taskTitle(task)}: ${st.label}`}>
       {body}
     </Link>
   ) : (
@@ -82,20 +83,20 @@ export function AgentGrid({ tasks, tid }: { tasks: Task[]; tid: string }) {
   const agents = new Set(shown.map((t) => t.agent)).size;
   const total = tasks.reduce((s, t) => s + (t.seconds ?? 0), 0);
   return (
-    <section aria-label="Agent execution">
+    <section aria-label={tr("Agent execution")}>
       <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         {running > 0 ? (
           <>
             <Loader2 size={14} className="animate-spin text-accent" />
-            <span className="font-semibold text-fg">Executing agents in parallel</span>
+            <span className="font-semibold text-fg">{tr("Executing agents in parallel")}</span>
             <span className="text-muted">{running} running now</span>
           </>
         ) : (
           <>
-            <span className="font-semibold text-fg">Agent execution</span>
+            <span className="font-semibold text-fg">{tr("Agent execution")}</span>
             <span className="text-muted">{agents} agents</span>
             <span className="text-muted">{shown.length} tasks</span>
-            <span className="text-muted">{duration(total)} of agent time</span>
+            <span className="text-muted">{tr("{time} of agent time", { time: duration(total) })}</span>
           </>
         )}
       </div>

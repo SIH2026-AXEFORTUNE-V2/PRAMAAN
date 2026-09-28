@@ -21,16 +21,17 @@ import { cx, relative } from "@/lib/format";
 import { TRANSFORMATION_STATUS, TONE_CLASSES } from "@/lib/status";
 import { useApp } from "@/store/app";
 import { useDraft } from "@/store/draft";
+import { msg, tr } from "@/i18n";
 
 const NAV = [
-  { to: "/workspace", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/artifacts", label: "Artifacts", icon: Files },
-  { to: "/agents", label: "Skills / Agents", icon: Boxes },
-  { to: "/connectors", label: "Connectors", icon: Plug },
-  { to: "/audit", label: "Audit Logs", icon: FileClock },
-  { to: "/templates", label: "Templates", icon: LayoutTemplate },
-  { to: "/evaluation", label: "Evaluation", icon: ChartNoAxesColumn },
-  { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/workspace", label: msg("Dashboard"), icon: LayoutDashboard },
+  { to: "/artifacts", label: msg("Artifacts"), icon: Files },
+  { to: "/agents", label: msg("Skills / Agents"), icon: Boxes },
+  { to: "/connectors", label: msg("Connectors"), icon: Plug },
+  { to: "/audit", label: msg("Audit Logs"), icon: FileClock },
+  { to: "/templates", label: msg("Templates"), icon: LayoutTemplate },
+  { to: "/evaluation", label: msg("Evaluation"), icon: ChartNoAxesColumn },
+  { to: "/settings", label: msg("Settings"), icon: Settings },
 ];
 
 function Section({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
@@ -75,15 +76,15 @@ export function Sidebar({ collapsed, onNavigate }: { collapsed: boolean; onNavig
     );
 
   return (
-    <nav aria-label="Primary" className="flex h-full flex-col overflow-y-auto px-2.5 pt-3 pb-4">
+    <nav aria-label={tr("Primary")} className="flex h-full flex-col overflow-y-auto px-2.5 pt-3 pb-4">
       {!collapsed && (
         <label className="relative mb-2 block">
-          <span className="sr-only">Search transformations</span>
+          <span className="sr-only">{tr("Search transformations")}</span>
           <Search size={14} className="absolute top-1/2 left-2.5 -translate-y-1/2 text-subtle" aria-hidden />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search transformations…"
+            placeholder={tr("Search transformations…")}
             className="h-9 w-full rounded-lg border border-border bg-surface-2 pr-2 pl-8 text-sm placeholder:text-subtle focus:border-accent focus:bg-surface focus:outline-none"
           />
         </label>
@@ -96,26 +97,26 @@ export function Sidebar({ collapsed, onNavigate }: { collapsed: boolean; onNavig
           onNavigate?.();
         }}
         className={cx(item(false), "mb-1 font-medium text-fg")}
-        title="New transformation"
+        title={tr("New transformation")}
       >
         <Plus size={16} />
-        {!collapsed && "New transformation"}
+        {!collapsed && tr("New transformation")}
       </button>
       <div className="space-y-0.5">
         {NAV.map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to} end={to !== "/workspace"} onClick={onNavigate} className={({ isActive }) => item(isActive)} title={collapsed ? label : undefined}>
+          <NavLink key={to} to={to} end={to !== "/workspace"} onClick={onNavigate} className={({ isActive }) => item(isActive)} title={collapsed ? tr(label) : undefined}>
             <Icon size={16} strokeWidth={1.8} aria-hidden />
-            {!collapsed && label}
+            {!collapsed && tr(label)}
           </NavLink>
         ))}
       </div>
 
       {!collapsed && (
         <>
-          <Section title="Pinned">
+          <Section title={tr("Pinned")}>
             <NavLink to="/about" onClick={onNavigate} className={({ isActive }) => item(isActive)}>
               <BookOpen size={15} aria-hidden />
-              <span className="truncate">Project overview</span>
+              <span className="truncate">{tr("Project overview")}</span>
             </NavLink>
             {pinnedRows.map((t) => (
               <div key={t.id} className="group relative">
@@ -125,7 +126,7 @@ export function Sidebar({ collapsed, onNavigate }: { collapsed: boolean; onNavig
                 </NavLink>
                 <button
                   type="button"
-                  aria-label={`Unpin ${t.title}`}
+                  aria-label={tr("Unpin {name}", { name: t.title })}
                   onClick={() => togglePin(t.id)}
                   className="absolute top-1/2 right-1.5 hidden -translate-y-1/2 rounded p-1 text-subtle group-hover:block hover:text-fg"
                 >
@@ -135,8 +136,8 @@ export function Sidebar({ collapsed, onNavigate }: { collapsed: boolean; onNavig
             ))}
           </Section>
 
-          <Section title={q ? `Results (${filtered.length})` : "Recent"}>
-            {recent.length === 0 && <p className="px-2.5 text-2xs text-subtle">{q ? "No matches." : "No transformations yet."}</p>}
+          <Section title={q ? tr("Results ({n})", { n: filtered.length }) : tr("Recent")}>
+            {recent.length === 0 && <p className="px-2.5 text-2xs text-subtle">{q ? tr("No matches.") : tr("No transformations yet.")}</p>}
             {recent.map((t) => {
               const st = TRANSFORMATION_STATUS[t.status];
               return (

@@ -10,6 +10,7 @@ import { Badge, ToneIcon } from "../ui/Badge";
 import { Button, IconButton } from "../ui/Button";
 import { MenuButton } from "../ui/Menu";
 import { ArtifactThumb } from "./ArtifactThumb";
+import { tr } from "@/i18n";
 
 export function VerificationBadge({ a }: { a: Artifact }) {
   if (!a.verification) return null;
@@ -26,11 +27,11 @@ export function useExport(tid: string, a: Artifact, onDone?: () => void) {
   return async (fmt: string) => {
     try {
       await download(api.exportUrl(tid, a.type, fmt));
-      toast({ tone: "success", title: `${a.label} exported`, body: `${fmt.toUpperCase()} · released version with provenance footer.` });
+      toast({ tone: "success", title: tr("{label} exported", { label: tr(a.label) }), body: tr("{format} · released version with provenance footer.", { format: fmt.toUpperCase() }) });
       await fetchT(tid);
       onDone?.();
     } catch (e) {
-      toast({ tone: "danger", title: "Export blocked", body: (e as Error).message });
+      toast({ tone: "danger", title: tr("Export blocked"), body: (e as Error).message });
     }
   };
 }
@@ -40,10 +41,10 @@ export function ExportMenu({ tid, a, size = "sm", iconOnly }: { tid: string; a: 
   const run = useExport(tid, a);
   return (
     <MenuButton
-      label="Export formats"
+      label={tr("Export formats")}
       trigger={(_, toggle) =>
         iconOnly ? (
-          <IconButton label={approved ? "Export" : "Export (approval required)"} className="h-8 w-8" onClick={toggle} disabled={!a.content}>
+          <IconButton label={approved ? tr("Export") : tr("Export (approval required)")} className="h-8 w-8" onClick={toggle} disabled={!a.content}>
             <Download size={15} />
           </IconButton>
         ) : (
@@ -52,9 +53,9 @@ export function ExportMenu({ tid, a, size = "sm", iconOnly }: { tid: string; a: 
           icon={<Download size={13} />}
           onClick={toggle}
           disabled={!a.content}
-          title={approved ? "Export the released version" : "Approval required before export"}
+          title={approved ? tr("Export the released version") : tr("Approval required before export")}
         >
-          Export
+          {tr("Export")}
         </Button>
         )
       }
@@ -82,7 +83,7 @@ export function ArtifactCard({ tid, a }: { tid: string; a: Artifact }) {
         <span className="text-accent">
           <OutputIcon type={a.type} size={17} />
         </span>
-        <h3 className="flex-1 truncate font-sans text-sm font-semibold tracking-normal">{a.label}</h3>
+        <h3 className="flex-1 truncate font-sans text-sm font-semibold tracking-normal">{tr(a.label)}</h3>
         {a.version > 0 && <span className="font-mono text-2xs text-subtle">v{a.version}</span>}
       </Link>
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -92,18 +93,18 @@ export function ArtifactCard({ tid, a }: { tid: string; a: Artifact }) {
         <VerificationBadge a={a} />
         {a.security && a.security.status !== "passed" && (
           <Badge tone={a.security.blocked ? "danger" : "warning"}>
-            <ShieldCheck size={12} /> {a.security.blocked ? "Blocked" : "Review"}
+            <ShieldCheck size={12} /> {a.security.blocked ? tr("Blocked") : tr("Review")}
           </Badge>
         )}
       </div>
       <div className="mt-auto flex items-center gap-1 pt-3.5">
         <Button size="sm" onClick={() => navigate(base)} disabled={!ready} className="flex-1">
-          Open
+          {tr("Open")}
         </Button>
-        <IconButton label="Evidence behind this artefact" className="h-8 w-8" onClick={() => navigate(`${base}?panel=evidence`)} disabled={!ready}>
+        <IconButton label={tr("Evidence behind this artefact")} className="h-8 w-8" onClick={() => navigate(`${base}?panel=evidence`)} disabled={!ready}>
           <FileSearch size={16} />
         </IconButton>
-        <IconButton label="Edit" className="h-8 w-8" onClick={() => navigate(`${base}?edit=1`)} disabled={!ready}>
+        <IconButton label={tr("Edit")} className="h-8 w-8" onClick={() => navigate(`${base}?edit=1`)} disabled={!ready}>
           <Pencil size={15} />
         </IconButton>
         <ExportMenu tid={tid} a={a} size="sm" iconOnly />

@@ -1,7 +1,7 @@
 import { Sparkles } from "lucide-react";
 import { cx } from "@/lib/format";
+import { tr } from "@/i18n";
 
-const FULL = "AI-generated illustration · not evidence";
 
 /**
  * An AI-generated illustration with its mandatory label. Never evidence, so never a claim target.
@@ -10,6 +10,7 @@ const FULL = "AI-generated illustration · not evidence";
  */
 export function Illustration({ src, alt, className, imgClassName }: { src?: string; alt: string; className?: string; imgClassName?: string }) {
   if (!src) return null;
+  const FULL = tr("AI-generated illustration · not evidence");
   return (
     <figure className={cx("@container overflow-hidden", !/\babsolute\b/.test(className ?? "") && "relative", className)}>
       <img src={src} alt={alt} loading="lazy" className={cx("h-full w-full object-cover", imgClassName)} />
@@ -23,7 +24,7 @@ export function Illustration({ src, alt, className, imgClassName }: { src?: stri
           {FULL}
         </span>
         <span className="@min-[360px]:hidden" aria-hidden>
-          AI image
+          {tr("AI image")}
         </span>
       </figcaption>
     </figure>

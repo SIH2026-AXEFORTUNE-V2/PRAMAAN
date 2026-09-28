@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cx } from "@/lib/format";
 import { IconButton } from "./Button";
+import { tr } from "@/i18n";
 
 function useEscape(open: boolean, onClose: () => void) {
   useEffect(() => {
@@ -54,7 +55,7 @@ export function Drawer({
             <div className="text-sm font-semibold text-fg">{title}</div>
             {subtitle && <div className="mt-0.5 text-xs text-muted">{subtitle}</div>}
           </div>
-          <IconButton label="Close" onClick={onClose}>
+          <IconButton label={tr("Close")} onClick={onClose}>
             <X size={16} />
           </IconButton>
         </div>
@@ -90,7 +91,7 @@ export function Modal({
       <div ref={ref} className={cx("animate-fade-in relative flex max-h-[88vh] w-full flex-col rounded-xl border border-border bg-surface shadow-lg", width)}>
         <div className="flex items-center gap-3 border-b border-border px-5 py-3.5">
           <div className="flex-1 text-sm font-semibold">{title}</div>
-          <IconButton label="Close" onClick={onClose}>
+          <IconButton label={tr("Close")} onClick={onClose}>
             <X size={16} />
           </IconButton>
         </div>

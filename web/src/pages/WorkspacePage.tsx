@@ -43,17 +43,33 @@ import { SourceCard } from "@/components/workspace/SourceCard";
 import { AgentTurn, UserTurn } from "@/components/workspace/Thread";
 import { TransformationControls } from "@/components/workspace/TransformationControls";
 import { VerificationPanel } from "@/components/workspace/VerificationPanel";
+import { tr } from "@/i18n";
 
 type Tab = "evidence" | "verification" | "security" | "provenance";
+
+/** The orchestrator's closing message, rebuilt from state so it is shown in the interface language. */
+function resultSummary(t: Transformation): string {
+  const arts = OUTPUT_ORDER.map((o) => t.artifacts[o]).filter((a): a is NonNullable<typeof a> => !!a);
+  const done = arts.filter((a) => a.content).length;
+  const review = arts.filter((a) => a.status === "needs_review" || a.status === "blocked");
+  const failed = arts.filter((a) => a.status === "failed");
+  const open = t.source_conflicts.filter((c) => c.status === "unresolved").length;
+  const parts = [tr("{n} of {total} artefacts generated and verified against {claims} evidence claims.", { n: done, total: arts.length, claims: t.claims.length })];
+  if (review.length) parts.push(tr("{n} need your attention before approval: {list}.", { n: review.length, list: review.map((a) => tr(a.label)).join(", ") }));
+  if (failed.length) parts.push(tr("Failed: {list}. Completed artefacts remain available.", { list: failed.map((a) => tr(a.label)).join(", ") }));
+  if (open) parts.push(tr("{n} source conflict(s) are unresolved.", { n: open }));
+  parts.push(tr("Nothing is released until you approve it."));
+  return parts.join(" ");
+}
 
 function Header({ children, right, title, subtitle }: { children?: React.ReactNode; right?: React.ReactNode; title?: string; subtitle?: string }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0 flex-1">
         {children}
-        <h1 className="mt-1 text-xl font-semibold text-fg sm:text-2xl">{title ?? "Content Transformation Workspace"}</h1>
+        <h1 className="mt-1 text-xl font-semibold text-fg sm:text-2xl">{title ?? tr("Content Transformation Workspace")}</h1>
         <p className="mt-1.5 max-w-[68ch] text-sm text-muted">
-          {subtitle ?? "Transform one source into verified, audience-specific communication artefacts."}
+          {subtitle ?? tr("Transform one source into verified, audience-specific communication artefacts.")}
         </p>
       </div>
       {right && <div className="flex flex-wrap items-center gap-1.5">{right}</div>}
@@ -62,7 +78,7 @@ function Header({ children, right, title, subtitle }: { children?: React.ReactNo
 }
 
 function Lineage() {
-  const steps = ["Source", "Evidence", "Transformation", "Verification", "Approval", "Provenance"];
+  const steps = [tr("Source"), tr("Evidence"), tr("Transformation"), tr("Verification"), tr("Approval"), tr("Provenance")];
   return (
     <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-2xs text-muted">
       {steps.map((s, i) => (
@@ -87,10 +103,9 @@ function NewTransformation() {
         <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface text-muted">
           <Upload size={20} />
         </div>
-        <p className="text-sm font-semibold text-fg">No transformation yet.</p>
+        <p className="text-sm font-semibold text-fg">{tr("No transformation yet.")}</p>
         <p className="mx-auto mt-1 max-w-lg text-xs text-muted">
-          Upload a source document and describe what you want to create. PRAMAAN builds one evidence base, generates every artefact from it, verifies each claim and
-          waits for your approval.
+          {tr("Upload a source document and describe what you want to create. PRAMAAN builds one evidence base, generates every artefact from it, verifies each claim and waits for your approval.")}
         </p>
         <div className="mt-5">
           <Lineage />
@@ -107,7 +122,7 @@ function ContractBar({ t, busy }: { t: Transformation; busy: boolean }) {
   const [p, setP] = useState<DraftParams>(fromT);
   useEffect(() => setP(fromT), [fromT]);
   const changed = (Object.keys(p) as (keyof DraftParams)[]).filter((k) => p[k] !== fromT[k]);
-  const { run, pending } = useAction(api.applyContract, { success: "Contract updated · regenerating artefacts" });
+  const { run, pending } = useAction(api.applyContract, { success: tr("Contract updated · regenerating artefacts") });
   if (!config) return <Skeleton className="h-12 w-full" />;
   return (
     <div>
@@ -118,10 +133,10 @@ function ContractBar({ t, busy }: { t: Transformation; busy: boolean }) {
             Contract change: {changed.map((k) => `${k} → ${p[k]}`).join(", ")}. Applying signs contract v{t.contract.version + 1} and regenerates every artefact from the same evidence.
           </span>
           <Button size="sm" variant="ghost" onClick={() => setP(fromT)}>
-            Discard
+            {tr("Discard")}
           </Button>
           <Button size="sm" variant="primary" loading={pending} onClick={() => void run(t.id, p)}>
-            Apply contract
+            {tr("Apply contract")}
           </Button>
         </div>
       )}
@@ -131,7 +146,7 @@ function ContractBar({ t, busy }: { t: Transformation; busy: boolean }) {
 
 function FollowUp({ t, busy, refresh }: { t: Transformation; busy: boolean; refresh: () => Promise<void> }) {
   const [text, setText] = useState("");
-  const { run, pending } = useAction(api.message, { errorTitle: "Could not send instruction" });
+  const { run, pending } = useAction(api.message, { errorTitle: tr("Could not send instruction") });
   const send = async () => {
     if (!text.trim() || busy) return;
     const ok = await run(t.id, text.trim());
@@ -144,16 +159,16 @@ function FollowUp({ t, busy, refresh }: { t: Transformation; busy: boolean; refr
     <div className="border-t border-border bg-surface/95 px-4 py-3 backdrop-blur sm:px-6">
       <div className="mx-auto flex max-w-[1180px] items-center gap-2 rounded-xl border border-border bg-surface px-2 py-1.5 shadow-sm focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-soft">
         <TextInput
-          aria-label="Follow-up instruction"
+          aria-label={tr("Follow-up instruction")}
           className="border-0 shadow-none focus:ring-0"
-          placeholder={busy ? "Agents are running…" : "Ask for changes, additional formats or refinements (e.g. “add a LinkedIn post”, “make the executive summary shorter”)"}
+          placeholder={busy ? tr("Agents are running…") : tr("Ask for changes, additional formats or refinements (e.g. “add a LinkedIn post”, “make the executive summary shorter”)")}
           value={text}
           disabled={busy}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && void send()}
         />
-        <Button variant="primary" size="sm" aria-label="Send" loading={pending} disabled={busy || !text.trim()} onClick={() => void send()} icon={!pending && <ArrowUp size={15} />}>
-          Send
+        <Button variant="primary" size="sm" aria-label={tr("Send")} loading={pending} disabled={busy || !text.trim()} onClick={() => void send()} icon={!pending && <ArrowUp size={15} />}>
+          {tr("Send")}
         </Button>
       </div>
     </div>
@@ -167,21 +182,21 @@ function FailureCard({ t, refresh }: { t: Transformation; refresh: () => Promise
   const retry = useAction(async () => {
     await api.retry(t.id);
     await refresh();
-  }, { errorTitle: "Retry failed" });
+  }, { errorTitle: tr("Retry failed") });
   return (
     <div className="rounded-xl border border-danger-line bg-danger-soft px-4 py-4" role="alert">
       <div className="flex items-center gap-2 text-danger">
         <AlertOctagon size={17} />
-        <p className="text-2xs font-bold">{sourceFail ? "Source processing failed" : "Evidence extraction failed"}</p>
+        <p className="text-2xs font-bold">{sourceFail ? tr("Source processing failed") : tr("Evidence extraction failed")}</p>
       </div>
-      <p className="mt-1.5 text-xs text-fg">{t.error ?? failed?.error ?? "The transformation could not complete."}</p>
-      {sourceFail && <p className="mt-1 text-2xs text-muted">Possible reasons: unsupported format · corrupted file · processing timeout.</p>}
+      <p className="mt-1.5 text-xs text-fg">{t.error ?? failed?.error ?? tr("The transformation could not complete.")}</p>
+      {sourceFail && <p className="mt-1 text-2xs text-muted">{tr("Possible reasons: unsupported format · corrupted file · processing timeout.")}</p>}
       <div className="mt-3 flex gap-2">
         <Button size="sm" icon={<RotateCcw size={13} />} loading={retry.pending} onClick={() => void retry.run()}>
-          Retry
+          {tr("Retry")}
         </Button>
         <Button size="sm" variant="ghost" icon={<Upload size={13} />} onClick={() => navigate("/workspace")}>
-          Upload another source
+          {tr("Upload another source")}
         </Button>
       </div>
     </div>
@@ -205,18 +220,18 @@ function ExistingTransformation({ id }: { id: string }) {
     await api.remove(id);
     drop(id);
     navigate("/workspace");
-  }, { success: "Transformation deleted" });
+  }, { success: tr("Transformation deleted") });
 
   if (error && !t) {
     return (
       <EmptyState
         className="h-full"
         icon={<FileSearch size={20} />}
-        title={error.status === 404 ? "Transformation not found" : "Could not load transformation"}
+        title={error.status === 404 ? tr("Transformation not found") : tr("Could not load transformation")}
         body={error.message}
         action={
           <Link to="/workspace" className="text-xs font-semibold text-accent hover:underline">
-            Start a new transformation
+            {tr("Start a new transformation")}
           </Link>
         }
       />
@@ -257,27 +272,27 @@ function ExistingTransformation({ id }: { id: string }) {
               subtitle={t.summary || undefined}
               right={
                 <>
-                  <IconButton label={pinned ? "Unpin" : "Pin to sidebar"} onClick={() => togglePin(t.id)} active={pinned}>
+                  <IconButton label={pinned ? tr("Unpin") : tr("Pin to sidebar")} onClick={() => togglePin(t.id)} active={pinned}>
                     {pinned ? <PinOff size={15} /> : <Pin size={15} />}
                   </IconButton>
                   <Button
                     size="sm"
                     icon={<Download size={13} />}
                     disabled={!approved}
-                    title={approved ? "Download approved artefacts with evidence ledger and manifest" : "Approve at least one artefact first"}
-                    onClick={() => download(api.bundleUrl(t.id)).catch((e: Error) => toast({ tone: "danger", title: "Export blocked", body: e.message }))}
+                    title={approved ? tr("Download approved artefacts with evidence ledger and manifest") : tr("Approve at least one artefact first")}
+                    onClick={() => download(api.bundleUrl(t.id)).catch((e: Error) => toast({ tone: "danger", title: tr("Export blocked"), body: e.message }))}
                   >
-                    Approved bundle
+                    {tr("Approved bundle")}
                   </Button>
-                  <IconButton label="Delete transformation" onClick={() => setConfirmDelete(true)} disabled={busy}>
+                  <IconButton label={tr("Delete transformation")} onClick={() => setConfirmDelete(true)} disabled={busy}>
                     <Trash2 size={15} />
                   </IconButton>
                   <Button size="sm" variant="ghost" className="xl:hidden" icon={<ListChecks size={14} />} onClick={() => setMobilePanel(true)}>
-                    Tasks{running ? ` · ${running}` : ""}
+                    {tr("Tasks")}{running ? ` · ${running}` : ""}
                   </Button>
                   {!panelOpen && (
                     <span className="hidden xl:contents">
-                      <IconButton label="Open task panel" onClick={() => setPanel(true)}>
+                      <IconButton label={tr("Open task panel")} onClick={() => setPanel(true)}>
                         <PanelRightOpen size={16} />
                       </IconButton>
                     </span>
@@ -290,33 +305,31 @@ function ExistingTransformation({ id }: { id: string }) {
                   {st.label}
                 </Badge>
                 <span className="font-mono font-semibold text-fg">{t.id}</span>
-                <span>Created {dateTime(t.created_at)}</span>
-                {t.total_seconds !== null && !busy && <span>Ran in {duration(t.total_seconds)}</span>}
-                <span>
-                  <b className="font-semibold text-fg">{approved}</b> of {arts.length} approved
-                </span>
+                <span>{tr("Created {when}", { when: dateTime(t.created_at) })}</span>
+                {t.total_seconds !== null && !busy && <span>{tr("Ran in {time}", { time: duration(t.total_seconds) })}</span>}
+                <span>{tr("{n} of {total} approved", { n: approved, total: arts.length })}</span>
               </div>
             </Header>
 
             <ContractBar t={t} busy={busy} />
 
-            <UserTurn name={first?.author ?? "Operator"} ts={first?.ts ?? t.created_at}>
+            <UserTurn name={first?.author ?? tr("Operator")} ts={first?.ts ?? t.created_at}>
               <p className="text-sm leading-relaxed text-fg">{t.request}</p>
               <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs">
                 {(
                   [
-                    ["Audience", t.contract.audience],
-                    ["Tone", t.params.tone],
-                    ["Language", t.params.language],
-                    ["Detail", t.params.detail],
-                    ["Objective", t.params.objective],
-                    ["Style", t.params.style],
-                    ["Classification", t.params.classification],
+                    [tr("Audience"), t.contract.audience],
+                    [tr("Tone"), t.params.tone],
+                    [tr("Language"), t.params.language],
+                    [tr("Detail"), t.params.detail],
+                    [tr("Objective"), t.params.objective],
+                    [tr("Style"), t.params.style],
+                    [tr("Classification"), t.params.classification],
                   ] as const
                 ).map(([k, v]) => (
                   <div key={k} className="flex gap-1.5">
                     <dt className="text-muted">{k}</dt>
-                    <dd className="font-semibold text-fg">{v}</dd>
+                    <dd className="font-semibold text-fg">{tr(v)}</dd>
                   </div>
                 ))}
               </dl>
@@ -329,7 +342,7 @@ function ExistingTransformation({ id }: { id: string }) {
 
             <AgentTurn ts={planMsg?.ts ?? t.created_at}>
               <p className="text-sm leading-relaxed text-fg">
-                {planMsg?.text ?? "Analysing the request and the sources. Here is my plan:"}
+                {planMsg ? tr(planMsg.text) : tr("Analysing the request and the sources. Here is my plan:")}
               </p>
               <AgentPlan plan={t.plan} />
               {failed ? <FailureCard t={t} refresh={refresh} /> : <AgentGrid tasks={t.tasks} tid={t.id} />}
@@ -337,10 +350,10 @@ function ExistingTransformation({ id }: { id: string }) {
                 <>
                   <Attention t={t} busy={busy} refresh={refresh} />
                   <p className="text-sm leading-relaxed text-fg">
-                    {firstResult?.text ??
+                    {(firstResult && resultSummary(t)) ??
                       (t.claims.length
-                        ? "Artefacts appear below as each specialist agent finishes. Every one is verified and security-scanned the moment it lands."
-                        : "Building the evidence base first — no artefact is written until every fact has been extracted and checked.")}
+                        ? tr("Artefacts appear below as each specialist agent finishes. Every one is verified and security-scanned the moment it lands.")
+                        : tr("Building the evidence base first — no artefact is written until every fact has been extracted and checked."))}
                   </p>
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(196px,1fr))] gap-3">
                     {arts.map((a) => (
@@ -358,7 +371,7 @@ function ExistingTransformation({ id }: { id: string }) {
                 </UserTurn>
               ) : (
                 <AgentTurn key={i} ts={m.ts}>
-                  <p className="text-sm leading-relaxed text-fg">{m.text}</p>
+                  <p className="text-sm leading-relaxed text-fg">{m.kind === "result" ? resultSummary(t) : tr(m.text)}</p>
                 </AgentTurn>
               ),
             )}
@@ -370,14 +383,14 @@ function ExistingTransformation({ id }: { id: string }) {
                     value={tab}
                     onChange={(v) => setSp((p) => (p.set("tab", v), p), { replace: true })}
                     tabs={[
-                      { id: "evidence", label: <><FileSearch size={13} /> Evidence{openSC ? <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-warning" aria-label="needs attention" /> : null}</>, count: t.claims.length },
-                      { id: "verification", label: <><CheckCircle2 size={13} /> Verification{issues ? <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-warning" aria-label="needs attention" /> : null}</> },
-                      { id: "security", label: <><ShieldCheck size={13} /> Security{t.security.injections.length ? <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-warning" aria-label="needs attention" /> : null}</> },
-                      { id: "provenance", label: <><Fingerprint size={13} /> Provenance</> },
+                      { id: "evidence", label: <><FileSearch size={13} /> {tr("Evidence")}{openSC ? <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-warning" aria-label={tr("needs attention")} /> : null}</>, count: t.claims.length },
+                      { id: "verification", label: <><CheckCircle2 size={13} /> {tr("Verification")}{issues ? <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-warning" aria-label={tr("needs attention")} /> : null}</> },
+                      { id: "security", label: <><ShieldCheck size={13} /> {tr("Security")}{t.security.injections.length ? <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-warning" aria-label={tr("needs attention")} /> : null}</> },
+                      { id: "provenance", label: <><Fingerprint size={13} /> {tr("Provenance")}</> },
                     ]}
                   />
                   <span className="text-2xs text-subtle">
-                    Claims {t.claims.length} · Red team {t.red_team.status} · Consistency {t.consistency.status}
+                    {tr("Claims {n} · Red team {rt} · Consistency {cs}", { n: t.claims.length, rt: tr(t.red_team.status), cs: tr(t.consistency.status) })}
                   </span>
                 </div>
                 {tab === "evidence" && <EvidencePanel t={t} />}
@@ -393,7 +406,7 @@ function ExistingTransformation({ id }: { id: string }) {
 
       {panelOpen && <aside className="hidden w-[340px] shrink-0 border-l border-border xl:block">{panel}</aside>}
       {mobilePanel && (
-        <div className="fixed inset-0 z-50 xl:hidden" role="dialog" aria-modal="true" aria-label="Generation tasks">
+        <div className="fixed inset-0 z-50 xl:hidden" role="dialog" aria-modal="true" aria-label={tr("Generation tasks")}>
           <div className="absolute inset-0 bg-[var(--overlay)]" onClick={() => setMobilePanel(false)} />
           <aside className={cx("animate-slide-in absolute inset-y-0 right-0 w-[340px] max-w-[92vw] border-l border-border shadow-lg")}>{panel}</aside>
         </div>
@@ -402,20 +415,20 @@ function ExistingTransformation({ id }: { id: string }) {
       <Modal
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
-        title="Delete transformation?"
+        title={tr("Delete transformation?")}
         footer={
           <>
             <Button variant="ghost" onClick={() => setConfirmDelete(false)}>
-              Cancel
+              {tr("Cancel")}
             </Button>
             <Button variant="danger" loading={del.pending} onClick={() => void del.run()}>
-              Delete {t.id}
+              {tr("Delete {id}", { id: t.id })}
             </Button>
           </>
         }
       >
         <p className="text-xs text-muted">
-          Sources, evidence and artefacts of {t.id} are removed from this workspace. Audit and provenance ledger entries are append-only and remain.
+          {tr("Sources, evidence and artefacts of {id} are removed from this workspace. Audit and provenance ledger entries are append-only and remain.", { id: t.id })}
         </p>
       </Modal>
     </div>

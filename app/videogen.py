@@ -3,7 +3,8 @@
 Per scene:
   visual     a real motion clip from Amazon Nova Reel (via Pollinations, when POLLINATIONS_API_KEY is set);
              otherwise, or if the clip fails, a slow pan-and-zoom over the scene's FLUX still
-  narration  Cloudflare Workers AI Deepgram Aura-2, reading the RELEASED scene script (security policy applied)
+  narration  OpenAI gpt-4o-mini-tts (multilingual) when OPENAI_API_KEY is set, else Cloudflare Workers AI
+             Deepgram Aura-2, reading the RELEASED scene script (security policy applied)
   subtitles  caption cards drawn with Pillow (no system fonts needed) and timed to the real audio length
 Scenes are encoded to identical segments and concatenated with the ffmpeg bundled in imageio-ffmpeg.
 A persistent "AI-generated video" mark is burned into every frame.
@@ -31,8 +32,16 @@ def _ffmpeg() -> str:
     return imageio_ffmpeg.get_ffmpeg_exe()
 
 
-def tts_available() -> bool:
+def _cloudflare_tts() -> bool:
     return bool(config.CLOUDFLARE_ACCOUNT_ID and config.CLOUDFLARE_API_TOKEN)
+
+
+def tts_available() -> bool:
+    return bool(config.OPENAI_API_KEY) or _cloudflare_tts()
+
+
+def tts_model() -> str:
+    return config.OPENAI_TTS_MODEL if config.OPENAI_API_KEY else config.TTS_MODEL
 
 
 def motion_available() -> bool:
@@ -50,7 +59,32 @@ def speakable(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-async def narrate(text: str) -> bytes:
+async def _openai_speech(text: str, language: str) -> bytes:
+    body = {"model": config.OPENAI_TTS_MODEL, "voice": config.OPENAI_TTS_VOICE, "input": text[:4000], "response_format": "mp3",
+            "instructions": f"Speak in {language}. Calm, clear, measured delivery, like a professional news briefing."}
+    headers = {"Authorization": f"Bearer {config.OPENAI_API_KEY}"}
+    async with httpx.AsyncClient(timeout=90) as client:
+        for attempt in range(3):
+            try:
+                r = await client.post(f"{config.OPENAI_BASE_URL.rstrip('/')}/audio/speech", json=body, headers=headers)
+            except httpx.HTTPError:
+                await asyncio.sleep(2 * (attempt + 1))
+                continue
+            if r.status_code == 200 and r.headers.get("content-type", "").startswith("audio/"):
+                return r.content
+            if r.status_code in (401, 403) or "insufficient_quota" in r.text:
+                raise EngineError(f"OpenAI text-to-speech unavailable: HTTP {r.status_code}")
+            await asyncio.sleep(2 * (attempt + 1))
+    raise EngineError("OpenAI text-to-speech failed after retries")
+
+
+async def narrate(text: str, language: str = "English") -> bytes:
+    if config.OPENAI_API_KEY:
+        try:
+            return await _openai_speech(text, language)
+        except EngineError:
+            if not _cloudflare_tts():
+                raise
     url = f"https://api.cloudflare.com/client/v4/accounts/{config.CLOUDFLARE_ACCOUNT_ID}/ai/run/{config.TTS_MODEL}"
     body: dict = {"text": text}
     if config.TTS_VOICE:

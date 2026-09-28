@@ -269,7 +269,7 @@ OUTPUT_TYPES: dict[str, dict] = {
         "icon": "layout",
         "description": "Infographic copy, data points, layout and colour recommendations, rendered as SVG.",
         "schema": INFOGRAPHIC_SCHEMA,
-        "exports": ["svg", "md", "json"],
+        "exports": ["svg", "jpg", "md", "json"],
         "spec": (
             "Design the CONTENT and LAYOUT of an infographic.\n"
             "- Respect the word limits in the schema strictly; infographics fail when text-heavy.\n"

@@ -6,6 +6,7 @@ import { Toaster } from "../ui/Toaster";
 import { ClaimDrawer } from "../evidence/ClaimDrawer";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
+import { tr } from "@/i18n";
 
 export function AppShell() {
   const collapsed = useApp((s) => s.sidebarCollapsed);
@@ -27,7 +28,7 @@ export function AppShell() {
   return (
     <div className="flex h-full flex-col">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2">
-        Skip to content
+        {tr("Skip to content")}
       </a>
       <TopBar onToggleSidebar={toggle} onOpenMobileNav={() => setMobile(true)} />
       {configError && (
@@ -40,7 +41,7 @@ export function AppShell() {
           <Sidebar collapsed={collapsed} />
         </aside>
         {mobileOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
+          <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label={tr("Navigation")}>
             <div className="absolute inset-0 bg-[var(--overlay)]" onClick={() => setMobile(false)} />
             <aside className="animate-fade-in absolute inset-y-0 left-0 w-[272px] border-r border-border bg-surface shadow-lg">
               <Sidebar collapsed={false} onNavigate={() => setMobile(false)} />

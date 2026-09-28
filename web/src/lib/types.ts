@@ -70,7 +70,7 @@ export interface AppConfig {
   parameters: Record<keyof Omit<Params, "audience_custom" | "instructions">, ParameterMeta>;
   operator: { name: string; role: string };
   workspace: string;
-  image_generation: { available: boolean; model: string | null };
+  image_generation: { available: boolean; model: string | null; infographic_design: boolean; infographic_model: string | null };
   video_production: { available: boolean; motion: boolean; narration_model: string; motion_model: string | null };
 }
 
@@ -253,6 +253,24 @@ export interface Illustration {
   bytes: number;
 }
 
+export interface InfographicDesign {
+  model: string;
+  prompt: string;
+  sha256: string;
+  bytes: number;
+  created_at: string;
+  artifact_version: number;
+  attempts: number;
+  readback: {
+    status: "passed" | "issues" | "unchecked";
+    checked_lines: number;
+    missing: { role: string; expected: string; similarity: number }[];
+    unexpected_numbers: string[];
+    transcript: string;
+    model: string | null;
+  };
+}
+
 export interface Artifact {
   type: OutputType;
   label: string;
@@ -275,6 +293,7 @@ export interface Artifact {
   exported: { version: number; format: string; at: string; by: string }[];
   illustrations?: Illustration[];
   video_render?: VideoRender;
+  design?: InfographicDesign;
 }
 
 export interface VideoRender {

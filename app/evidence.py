@@ -347,11 +347,24 @@ def _dedupe(claims: list[dict]) -> list[dict]:
     return out
 
 
+# Words that name the kind of value rather than the thing measured ("detection date and time" is about detection).
+GENERIC_LABEL = {"date", "time", "day", "dated", "timestamp", "value", "count", "number", "total", "amount", "figure"}
+
+
+def label_keywords(label: str) -> set[str]:
+    return keywords(label) - GENERIC_LABEL
+
+
 def _same_attribute(a: dict, b: dict) -> bool:
     if a["normalized"]["type"] != b["normalized"]["type"]:
         return False
     ka, kb = keywords(a["label"]), keywords(b["label"])
     if ka and kb and len(ka & kb) / len(ka | kb) > 0.6:
+        return True
+    # Dates and figures about the same event, named differently by each source:
+    # "Detection date and time" and "Intrusion detection date" both describe detection.
+    ga, gb = label_keywords(a["label"]), label_keywords(b["label"])
+    if a["normalized"]["type"] in ("date", "number") and ga and gb and (ga <= gb or gb <= ga):
         return True
     ea = keywords(a["claim"]) - keywords(str(a["value"]))
     eb = keywords(b["claim"]) - keywords(str(b["value"]))

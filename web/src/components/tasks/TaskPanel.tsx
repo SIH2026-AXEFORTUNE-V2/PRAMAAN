@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { ChevronDown, Cpu, Lock, PanelRightClose, Server, Activity } from "lucide-react";
 import { cx, time } from "@/lib/format";
-import { groupOf, latestTasks, type TaskGroup } from "@/lib/tasks";
+import { agentName, groupOf, latestTasks, taskDetail, taskTitle, type TaskGroup } from "@/lib/tasks";
 import type { Task, Transformation } from "@/lib/types";
 import { useApp } from "@/store/app";
 import { StatusIcon } from "../ui/Badge";
 import { IconButton } from "../ui/Button";
 import { ProgressBar } from "../ui/misc";
+import { tr } from "@/i18n";
 
 type Filter = "all" | TaskGroup;
 
@@ -19,15 +20,15 @@ function TaskRow({ t }: { t: Task }) {
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
-          <p className="min-w-0 flex-1 truncate text-sm font-medium text-fg" title={t.title}>
-            {t.title}
+          <p className="min-w-0 flex-1 truncate text-sm font-medium text-fg" title={taskTitle(t)}>
+            {taskTitle(t)}
           </p>
           <span className="shrink-0 font-mono text-2xs text-subtle tabular-nums">
-            {t.status === "running" ? `${t.progress}%` : when ? time(when) : t.status === "needs_review" ? "Waiting" : "In queue"}
+            {t.status === "running" ? `${t.progress}%` : when ? time(when) : t.status === "needs_review" ? tr("Waiting") : tr("In queue")}
           </span>
         </div>
-        <p className="truncate text-xs text-muted" title={`${t.agent}: ${t.error ?? t.detail}`}>
-          {t.error ?? t.detail}
+        <p className="truncate text-xs text-muted" title={`${agentName(t)}: ${taskDetail(t)}`}>
+          {taskDetail(t)}
         </p>
         {t.status === "running" && (
           <div className="mt-1.5">
@@ -53,7 +54,7 @@ function Group({ title, tasks }: { title: string; tasks: Task[] }) {
   );
 }
 
-/** Right-hand "Generation tasks" panel. Same task objects as the workspace — never a separate state. */
+/** Right-hand tr("Generation tasks") panel. Same task objects as the workspace — never a separate state. */
 export function TaskPanel({ t, onClose }: { t: Transformation; onClose: () => void }) {
   const config = useApp((s) => s.config);
   const [filter, setFilter] = useState<Filter>("all");
@@ -68,19 +69,19 @@ export function TaskPanel({ t, onClose }: { t: Transformation; onClose: () => vo
     <div className="flex h-full flex-col bg-surface">
       <div className="flex items-center gap-2 px-4 pt-3 pb-2">
         <Activity size={16} className="text-accent" />
-        <h2 className="flex-1 text-base font-semibold">Generation tasks</h2>
-        <IconButton label="Close task panel" onClick={onClose}>
+        <h2 className="flex-1 text-base font-semibold">{tr("Generation tasks")}</h2>
+        <IconButton label={tr("Close task panel")} onClick={onClose}>
           <PanelRightClose size={16} />
         </IconButton>
       </div>
       <div className="px-3 pb-2.5">
-        <div role="tablist" aria-label="Task filter" className="grid grid-cols-4 gap-0.5 rounded-lg bg-surface-3 p-0.5">
+        <div role="tablist" aria-label={tr("Task filter")} className="grid grid-cols-4 gap-0.5 rounded-lg bg-surface-3 p-0.5">
           {(
             [
-              ["all", "All", tasks.length],
-              ["running", "Running", running.length],
-              ["completed", "Completed", done.length],
-              ["pending", "Pending", pending.length],
+              ["all", tr("All"), tasks.length],
+              ["running", tr("Running"), running.length],
+              ["completed", tr("Completed"), done.length],
+              ["pending", tr("Pending"), pending.length],
             ] as [Filter, string, number][]
           ).map(([id, label, n]) => (
             <button
@@ -90,20 +91,20 @@ export function TaskPanel({ t, onClose }: { t: Transformation; onClose: () => vo
               aria-selected={filter === id}
               onClick={() => setFilter(id)}
               className={cx(
-                "flex flex-col items-center rounded-md px-1 py-1.5 text-2xs leading-tight font-medium transition-colors",
+                "flex min-w-0 flex-col items-center rounded-md px-1 py-1.5 text-2xs leading-tight font-medium transition-colors",
                 filter === id ? "bg-surface text-accent shadow-sm" : "text-muted hover:text-fg",
               )}
             >
               <span className="font-mono text-sm font-bold tabular-nums">{n}</span>
-              {label}
+              <span className="w-full truncate text-center" title={label}>{label}</span>
             </button>
           ))}
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto border-t border-border">
-        {(filter === "all" || filter === "running") && <Group title="In progress" tasks={running} />}
-        {(filter === "all" || filter === "completed") && <Group title="Finished" tasks={done} />}
-        {(filter === "all" || filter === "pending") && <Group title="Pending" tasks={pending} />}
+        {(filter === "all" || filter === "running") && <Group title={tr("In progress")} tasks={running} />}
+        {(filter === "all" || filter === "completed") && <Group title={tr("Finished")} tasks={done} />}
+        {(filter === "all" || filter === "pending") && <Group title={tr("Pending")} tasks={pending} />}
         {filter !== "all" && by(filter).length === 0 && <p className="px-4 py-8 text-center text-2xs text-subtle">No {filter} tasks.</p>}
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border px-4 py-3 text-xs text-muted">
@@ -115,7 +116,7 @@ export function TaskPanel({ t, onClose }: { t: Transformation; onClose: () => vo
           <Server size={12} /> {config?.deployment.label}
         </span>
         <span className="inline-flex items-center gap-1 text-accent">
-          <Lock size={12} /> Secure Mode
+          <Lock size={12} /> {tr("Secure Mode")}
         </span>
       </div>
     </div>

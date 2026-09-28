@@ -43,6 +43,21 @@ GROQ_TEXT_MODELS = _list("GROQ_TEXT_MODEL", "openai/gpt-oss-120b,openai/gpt-oss-
 GROQ_ASR_MODEL = os.getenv("GROQ_ASR_MODEL", "whisper-large-v3-turbo").strip()
 GROQ_MAX_TOKENS = int(os.getenv("GROQ_MAX_TOKENS", "3500"))
 
+# OpenAI (preferred when set; billed per use): text, vision, speech-to-text, images, infographics and narration.
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").strip()
+OPENAI_TEXT_MODELS = _list("OPENAI_TEXT_MODEL", "gpt-5.4-mini,gpt-4.1-mini")
+OPENAI_VISION_MODEL = os.getenv("OPENAI_VISION_MODEL", "gpt-5.4-mini").strip()
+OPENAI_ASR_MODEL = os.getenv("OPENAI_ASR_MODEL", "gpt-4o-transcribe").strip()
+# Reasoning tokens count against the completion budget, so OpenAI needs more headroom than Groq.
+OPENAI_MAX_TOKENS = int(os.getenv("OPENAI_MAX_TOKENS", "16000"))
+OPENAI_IMAGE_MODEL = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1-mini").strip()
+OPENAI_IMAGE_QUALITY = os.getenv("OPENAI_IMAGE_QUALITY", "medium").strip()
+# Designed infographics carry text, so they use the model that spells reliably.
+OPENAI_INFOGRAPHIC_MODEL = os.getenv("OPENAI_INFOGRAPHIC_MODEL", "gpt-image-2").strip()
+OPENAI_TTS_MODEL = os.getenv("OPENAI_TTS_MODEL", "gpt-4o-mini-tts").strip()
+OPENAI_TTS_VOICE = os.getenv("OPENAI_TTS_VOICE", "alloy").strip()
+
 # Image generation (Visual Agent) via Cloudflare Workers AI.
 CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID", "").strip()
 CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "").strip()
@@ -66,10 +81,11 @@ J2V_TIMEOUT_S = int(os.getenv("J2V_TIMEOUT_S", "600"))
 VIDEO_MOTION_MAX = int(os.getenv("VIDEO_MOTION_MAX", "1"))
 VIDEO_CLIP_SECONDS = int(os.getenv("VIDEO_CLIP_SECONDS", "6" if "nova-reel" in VIDEO_MODEL else "5"))
 
-# Which text engine to use: auto (Groq > self-hosted gateway > Hugging Face), or force one.
+# Which text engine to use: auto (OpenAI > Groq > self-hosted gateway > Hugging Face), or force one.
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "auto").strip().lower()
 if LLM_PROVIDER == "auto":
-    LLM_PROVIDER = "groq" if GROQ_API_KEY else ("gateway" if MODEL_GATEWAY_URL else ("huggingface" if HF_TOKEN else "offline"))
+    LLM_PROVIDER = ("openai" if OPENAI_API_KEY else "groq" if GROQ_API_KEY else "gateway" if MODEL_GATEWAY_URL
+                    else "huggingface" if HF_TOKEN else "offline")
 
 # Demo mode runs the full pipeline with a deterministic offline engine, so the
 # dashboard can be explored without a token. It is enabled automatically when no

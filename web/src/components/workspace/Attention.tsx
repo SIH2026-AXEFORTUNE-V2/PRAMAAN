@@ -8,6 +8,7 @@ import type { OutputType, Transformation } from "@/lib/types";
 import { useAction } from "@/hooks/useAction";
 import { useApp } from "@/store/app";
 import { Button } from "../ui/Button";
+import { tr } from "@/i18n";
 
 function Banner({ tone, icon, title, children, actions }: { tone: "warning" | "danger"; icon: ReactNode; title: string; children: ReactNode; actions?: ReactNode }) {
   const c = tone === "danger" ? "border-danger-line bg-danger-soft" : "border-warning-line bg-warning-soft";
@@ -33,15 +34,15 @@ export function Attention({ t, busy, refresh }: { t: Transformation; busy: boole
   const regen = useAction(async () => {
     await api.regenerateStale(t.id);
     await refresh();
-  }, { success: "Regenerating affected outputs only" });
+  }, { success: tr("Regenerating affected outputs only") });
   const repair = useAction(async (cxid: string) => {
     await api.repairConflict(t.id, cxid);
     await refresh();
-  }, { success: "Repairing dependents from the evidence ledger" });
+  }, { success: tr("Repairing dependents from the evidence ledger") });
   const fixUnc = useAction(async (o: OutputType) => {
     await api.repairUncertainty(t.id, o);
     await refresh();
-  }, { success: "Regenerating with certainty constraints" });
+  }, { success: tr("Regenerating with certainty constraints") });
 
   const uncertainty = (Object.entries(t.artifacts) as [OutputType, NonNullable<Transformation["artifacts"][OutputType]>][])
     .map(([k, a]) => ({ k, a, issues: (a.verification?.refs ?? []).flatMap((r) => r.issues.filter((i) => i.kind === "uncertainty").map((i) => ({ i, r }))) }))
@@ -55,24 +56,24 @@ export function Attention({ t, busy, refresh }: { t: Transformation; busy: boole
   return (
     <div className="space-y-2">
       {fallback && (
-        <Banner tone="warning" icon={<AlertTriangle size={17} />} title="Live model unavailable · offline fallback used">
-          {fallback.replace(/\.+$/, "")}. Affected artefacts were produced by the offline extractive engine and are marked for review; they still pass the same verification
-          gates. Regenerate them once the model gateway is available.
+        <Banner tone="warning" icon={<AlertTriangle size={17} />} title={tr("Live model unavailable · offline fallback used")}>
+          {fallback.replace(/\.+$/, "")}.{" "}
+          {tr("Affected artefacts were produced by the offline extractive engine and are marked for review; they still pass the same verification gates. Regenerate them once the model gateway is available.")}
         </Banner>
       )}
       {stale.length > 0 && (
         <Banner
           tone="warning"
           icon={<GitBranch size={17} />}
-          title="Claim updated"
+          title={tr("Claim updated")}
           actions={
             <Button size="sm" variant="primary" icon={<RefreshCcw size={13} />} loading={regen.pending} disabled={busy} onClick={() => void regen.run()}>
-              Regenerate affected outputs
+              {tr("Regenerate affected outputs")}
             </Button>
           }
         >
-          <b>{stale.length}</b> of {Object.keys(t.artifacts).length} artefacts depend on changed evidence and require regeneration:{" "}
-          {stale.map(([k]) => OUTPUT_SHORT[k]).join(", ")}. {stale[0][1].stale?.reason}. Unaffected artefacts are not regenerated.
+          {tr("{n} of {total} artefacts depend on changed evidence and require regeneration:", { n: stale.length, total: Object.keys(t.artifacts).length })}{" "}
+          {stale.map(([k]) => OUTPUT_SHORT[k]).join(", ")}. {stale[0][1].stale?.reason}. {tr("Unaffected artefacts are not regenerated.")}
         </Banner>
       )}
 
@@ -84,14 +85,14 @@ export function Attention({ t, busy, refresh }: { t: Transformation; busy: boole
             key={c.id}
             tone="danger"
             icon={<AlertTriangle size={17} />}
-            title="Claim conflict detected"
+            title={tr("Claim conflict detected")}
             actions={
               <>
                 <Button size="sm" onClick={() => openClaim({ tid: t.id, claimId: c.claim_id, artifact: wrong[0]?.artifact, refId: ref?.ref_id })}>
-                  Review conflict
+                  {tr("Review conflict")}
                 </Button>
                 <Button size="sm" variant="primary" icon={<Wrench size={13} />} loading={repair.pending} disabled={busy} onClick={() => void repair.run(c.id)}>
-                  Regenerate dependents
+                  {tr("Regenerate dependents")}
                 </Button>
               </>
             }
@@ -101,7 +102,7 @@ export function Attention({ t, busy, refresh }: { t: Transformation; busy: boole
                 {c.claim_id} · {c.attribute}
               </span>
               <span />
-              <span className="text-muted">Source</span>
+              <span className="text-muted">{tr("Source")}</span>
               <span className="font-semibold text-success">{c.source_value}</span>
               {wrong.map((o) => (
                 <span key={o.artifact + o.path} className="contents">
@@ -122,22 +123,24 @@ export function Attention({ t, busy, refresh }: { t: Transformation; busy: boole
           key={k}
           tone="danger"
           icon={<AlertTriangle size={17} />}
-          title="Uncertainty strengthening detected"
+          title={tr("Uncertainty strengthening detected")}
           actions={
             <>
               <Button size="sm" onClick={() => openClaim({ tid: t.id, claimId: issues[0].i.claim_id ?? "", artifact: k, refId: issues[0].r.ref_id })}>
-                Human review
+                {tr("Human review")}
               </Button>
               <Button size="sm" variant="primary" icon={<Wrench size={13} />} loading={fixUnc.pending} disabled={busy} onClick={() => void fixUnc.run(k)}>
-                Repair
+                {tr("Repair")}
               </Button>
             </>
           }
         >
-          <b>{a.label}</b> states {issues.length === 1 ? "a hedged claim" : `${issues.length} hedged claims`} with more certainty than the source.
+          {issues.length === 1
+            ? tr("{label} states a hedged claim with more certainty than the source.", { label: tr(a.label) })
+            : tr("{label} states {n} hedged claims with more certainty than the source.", { label: tr(a.label), n: issues.length })}
           <span className="mt-1 block text-2xs text-muted">
-            “{issues[0].r.sentence.slice(0, 140)}” · Source confidence: <b>{MODALITY_LABEL[issues[0].i.expected ?? ""]}</b> → Generated:{" "}
-            <b>{MODALITY_LABEL[issues[0].i.found ?? ""]}</b>. Approval is blocked until repaired.
+            “{issues[0].r.sentence.slice(0, 140)}” · {tr("Source confidence")}: <b>{MODALITY_LABEL[issues[0].i.expected ?? ""]}</b> → {tr("Generated")}:{" "}
+            <b>{MODALITY_LABEL[issues[0].i.found ?? ""]}</b>. {tr("Approval is blocked until repaired.")}
           </span>
         </Banner>
       ))}
@@ -147,20 +150,20 @@ export function Attention({ t, busy, refresh }: { t: Transformation; busy: boole
           key={c.id}
           tone="warning"
           icon={<AlertTriangle size={17} />}
-          title="Source conflict · unresolved"
+          title={tr("Source conflict · unresolved")}
           actions={
             <Link to={`/workspace/${t.id}?tab=evidence`} className="inline-flex h-8 items-center rounded-lg border border-border bg-surface px-2.5 text-xs font-medium hover:bg-surface-2">
-              Resolve
+              {tr("Resolve")}
             </Link>
           }
         >
-          <b>{c.attribute}</b>: {c.values.map((v) => `${v.source_name} says ${v.value}`).join(" · ")}. PRAMAAN will not choose automatically; artefacts mark this value as under review.
+          <b>{c.attribute}</b>: {c.values.map((v) => tr("{source} says {value}", { source: v.source_name, value: v.value })).join(" · ")}. {tr("PRAMAAN will not choose automatically; artefacts mark this value as under review.")}
         </Banner>
       ))}
 
       {blocked.map((a) => (
-        <Banner key={a!.type} tone="danger" icon={<ShieldAlert size={17} />} title="Security policy blocked an artefact">
-          <b>{a!.label}</b> contains content that cannot be released on a {a!.security!.exposure_label.toLowerCase()}. Edit or regenerate it before approval.
+        <Banner key={a!.type} tone="danger" icon={<ShieldAlert size={17} />} title={tr("Security policy blocked an artefact")}>
+          {tr("{label} contains content that cannot be released on this channel ({channel}). Edit or regenerate it before approval.", { label: tr(a!.label), channel: tr(a!.security!.exposure_label) })}
         </Banner>
       ))}
     </div>

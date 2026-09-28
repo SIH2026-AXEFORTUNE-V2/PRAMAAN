@@ -1,6 +1,7 @@
 import { useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
 import { Check, Copy } from "lucide-react";
 import { cx, shortHash } from "@/lib/format";
+import { tr } from "@/i18n";
 
 export function Tabs<T extends string>({
   tabs,
@@ -68,7 +69,7 @@ export function Hash({ value, n = 12, label }: { value: string | null | undefine
           window.setTimeout(() => setCopied(false), 1400);
         });
       }}
-      title={`${label ? label + ": " : ""}${value} (click to copy)`}
+      title={`${label ? label + ": " : ""}${value} (${tr("click to copy")})`}
       className="inline-flex items-center gap-1 rounded px-1 font-mono text-2xs text-muted tabular-nums hover:bg-surface-3 hover:text-fg"
     >
       {shortHash(value, n)}

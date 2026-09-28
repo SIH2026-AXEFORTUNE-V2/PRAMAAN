@@ -1,4 +1,5 @@
-"""Visual Agent: illustrative images for artefacts via Cloudflare Workers AI (FLUX.1 [schnell]).
+"""Visual Agent: illustrative images for artefacts via OpenAI gpt-image (when OPENAI_API_KEY is set)
+or Cloudflare Workers AI (FLUX.1 [schnell]); Cloudflare is also the fallback when OpenAI fails.
 
 Illustrations are decoration, never evidence. To keep them from carrying factual claims:
   * prompts come only from the writer's visual suggestions, not from claims or the source;
@@ -41,8 +42,52 @@ TEXTY = re.compile(r"\b(?:company\s+)?(?:logos?|icons?(?:\s+set)?|diagrams?|char
 ASPECT = {"linkedin": 1.91, "presentation": 16 / 9, "cover": 6.0 / 7.5, "video": 16 / 9}
 
 
-def available() -> bool:
+def cloudflare_available() -> bool:
     return bool(config.CLOUDFLARE_ACCOUNT_ID and config.CLOUDFLARE_API_TOKEN)
+
+
+def available() -> bool:
+    return bool(config.OPENAI_API_KEY) or cloudflare_available()
+
+
+def model_name() -> str:
+    return config.OPENAI_IMAGE_MODEL if config.OPENAI_API_KEY else config.IMAGE_MODEL
+
+
+def openai_size(aspect: float) -> str:
+    """gpt-image renders three fixed sizes; pick the nearest and crop to the exact aspect afterwards."""
+    return "1536x1024" if aspect > 1.2 else ("1024x1536" if aspect < 0.83 else "1024x1024")
+
+
+async def openai_image(prompt: str, size: str, model: str, quality: str, timeout: float = 180) -> bytes:
+    body = {"model": model, "prompt": prompt, "size": size, "quality": quality, "output_format": "jpeg", "n": 1}
+    headers = {"Authorization": f"Bearer {config.OPENAI_API_KEY}"}
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        for attempt in range(3):
+            try:
+                r = await client.post(f"{config.OPENAI_BASE_URL.rstrip('/')}/images/generations", json=body, headers=headers)
+            except httpx.HTTPError as e:
+                if attempt == 2:
+                    raise EngineError(f"Image generation failed: {e}") from e
+                continue
+            if r.status_code == 200:
+                raw = base64.b64decode(r.json()["data"][0].get("b64_json") or "")
+                if not raw:
+                    raise EngineError("The image model returned no image.")
+                return raw
+            err = (r.json().get("error") or {}) if r.headers.get("content-type", "").startswith("application/json") else {}
+            if r.status_code in (401, 403):
+                raise EngineError(f"OpenAI refused image generation: {(err.get('message') or r.text)[:160]}")
+            if err.get("code") == "insufficient_quota":
+                raise EngineError("The OpenAI account has no remaining quota for image generation.")
+            if err.get("code") == "moderation_blocked":
+                raise EngineError("OpenAI's safety system declined this image prompt.")
+            if r.status_code == 429 or r.status_code >= 500:
+                import asyncio
+                await asyncio.sleep(3 * (attempt + 1))
+                continue
+            raise EngineError(f"Image generation failed: HTTP {r.status_code} {(err.get('message') or r.text)[:160]}")
+    raise EngineError("Image generation is rate-limited right now; try again in a minute.")
 
 
 def slots(otype: str, content: dict, domain: str = "") -> list[dict]:
@@ -134,8 +179,14 @@ def _crop(jpeg: bytes, aspect: float, max_w: int = 1280) -> bytes:
 
 
 async def generate(prompt: str, aspect: float) -> bytes:
-    if not available():
-        raise EngineError("Image generation is not configured (CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_API_TOKEN).")
+    if config.OPENAI_API_KEY:
+        try:
+            return _crop(await openai_image(prompt, openai_size(aspect), config.OPENAI_IMAGE_MODEL, config.OPENAI_IMAGE_QUALITY), aspect)
+        except EngineError:
+            if not cloudflare_available():
+                raise
+    if not cloudflare_available():
+        raise EngineError("Image generation is not configured (OPENAI_API_KEY, or CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_API_TOKEN).")
     url = f"https://api.cloudflare.com/client/v4/accounts/{config.CLOUDFLARE_ACCOUNT_ID}/ai/run/{config.IMAGE_MODEL}"
     async with httpx.AsyncClient(timeout=90) as client:
         for attempt in range(3):

@@ -12,9 +12,12 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Menu";
 import { EmptyState, Skeleton, Tabs, TextInput } from "@/components/ui/misc";
 import { LedgerList } from "@/components/workspace/ProvenancePanel";
+import { msg, tr } from "@/i18n";
 
-const STATUS = ["All statuses", "success", "warning", "failed"];
-const ACTORS = ["All actors", "user", "agent", "system"];
+const label = (v: string) => tr(v.charAt(0).toUpperCase() + v.slice(1).replace(/_/g, " "));
+msg("Success"); msg("Warning"); msg("Failed"); msg("User"); msg("Agent"); msg("System");
+const STATUS = [msg("All statuses"), "success", "warning", "failed"];
+const ACTORS = [msg("All actors"), "user", "agent", "system"];
 
 function ActorIcon({ e }: { e: AuditEvent }) {
   const I = e.actor_type === "user" ? User : e.actor_type === "agent" ? Bot : Wrench;
@@ -42,10 +45,10 @@ function AuditTable() {
   return (
     <Card>
       <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
-        <TextInput className="max-w-72" placeholder="Search action, object, actor, TR-id…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search audit log" />
-        <Select variant="field" label="Status" value={status} options={STATUS} onChange={setStatus} className="w-40" />
-        <Select variant="field" label="Actor" value={actor} options={ACTORS} onChange={setActor} className="w-40" />
-        <span className="ml-auto text-2xs text-subtle">{data ? `${data.total.toLocaleString()} events` : ""}</span>
+        <TextInput className="max-w-72" placeholder={tr("Search action, object, actor, TR-id…")} value={q} onChange={(e) => setQ(e.target.value)} aria-label={tr("Search audit log")} />
+        <Select variant="field" label={tr("Status")} value={status} options={STATUS} display={label} onChange={setStatus} className="w-40" />
+        <Select variant="field" label={tr("Actor")} value={actor} options={ACTORS} display={label} onChange={setActor} className="w-40" />
+        <span className="ml-auto text-2xs text-subtle">{data ? tr("{n} events", { n: data.total.toLocaleString() }) : ""}</span>
       </div>
       {loading && !data ? (
         <div className="space-y-2 p-4">
@@ -54,20 +57,20 @@ function AuditTable() {
           ))}
         </div>
       ) : error ? (
-        <EmptyState title="Could not load audit log" body={error} />
+        <EmptyState title={tr("Could not load audit log")} body={error} />
       ) : !data?.items.length ? (
-        <EmptyState title="No events" body="Events are recorded for every upload, agent action, security decision, approval and export." />
+        <EmptyState title={tr("No events")} body={tr("Events are recorded for every upload, agent action, security decision, approval and export.")} />
       ) : (
         <div className="overflow-x-auto">
           <table className={cx("w-full min-w-[980px] text-xs", loading && "opacity-60")}>
             <thead>
               <tr className="border-b border-border text-left text-2xs text-subtle">
-                <th className="px-4 py-2 font-semibold">Timestamp</th>
-                <th className="px-2 py-2 font-semibold">Actor</th>
-                <th className="px-2 py-2 font-semibold">Action</th>
-                <th className="px-2 py-2 font-semibold">Object</th>
-                <th className="px-2 py-2 font-semibold">Status</th>
-                <th className="px-2 py-2 font-semibold">Transformation</th>
+                <th className="px-4 py-2 font-semibold">{tr("Timestamp")}</th>
+                <th className="px-2 py-2 font-semibold">{tr("Actor")}</th>
+                <th className="px-2 py-2 font-semibold">{tr("Action")}</th>
+                <th className="px-2 py-2 font-semibold">{tr("Object")}</th>
+                <th className="px-2 py-2 font-semibold">{tr("Status")}</th>
+                <th className="px-2 py-2 font-semibold">{tr("Transformation")}</th>
               </tr>
             </thead>
             <tbody>
@@ -83,14 +86,14 @@ function AuditTable() {
                     </span>
                   </td>
                   <td className="max-w-[360px] px-2 py-2">
-                    <span className="font-medium text-fg">{e.action}</span>
+                    <span className="font-medium text-fg">{tr(e.action)}</span>
                     {e.detail && <span className="mt-0.5 block text-2xs text-muted">{e.detail}</span>}
                   </td>
                   <td className="max-w-[220px] truncate px-2 py-2 text-muted" title={e.object}>
                     {e.object}
                   </td>
                   <td className="px-2 py-2">
-                    <Badge tone={e.status === "success" ? "success" : e.status === "warning" ? "warning" : e.status === "failed" ? "danger" : "neutral"}>{e.status}</Badge>
+                    <Badge tone={e.status === "success" ? "success" : e.status === "warning" ? "warning" : e.status === "failed" ? "danger" : "neutral"}>{label(e.status)}</Badge>
                   </td>
                   <td className="px-2 py-2">
                     {e.transformation_id ? (
@@ -108,11 +111,11 @@ function AuditTable() {
         </div>
       )}
       <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-2.5 text-2xs text-muted">
-        Page {page} of {pages}
-        <Button size="xs" variant="ghost" aria-label="Previous page" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+        {tr("Page {page} of {pages}", { page, pages })}
+        <Button size="xs" variant="ghost" aria-label={tr("Previous page")} disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
           <ChevronLeft size={14} />
         </Button>
-        <Button size="xs" variant="ghost" aria-label="Next page" disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
+        <Button size="xs" variant="ghost" aria-label={tr("Next page")} disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
           <ChevronRight size={14} />
         </Button>
       </div>
@@ -126,22 +129,22 @@ function Ledger() {
   return (
     <Card>
       <CardHeader
-        title="Provenance ledger"
+        title={tr("Provenance ledger")}
         subtitle={data?.note}
         actions={
           v && (
             <Badge tone={v.valid ? "success" : "danger"}>
-              {v.valid ? <ShieldCheck size={12} /> : <ShieldX size={12} />} {v.valid ? "Chain valid" : `Broken at #${v.broken_at}`} · {v.entries} entries
+              {v.valid ? <ShieldCheck size={12} /> : <ShieldX size={12} />} {v.valid ? tr("Chain valid") : tr("Chain broken at #{n}", { n: v.broken_at ?? "" })} · {tr("{n} entries", { n: v.entries })}
             </Badge>
           )
         }
       />
       {v && (
         <p className="border-b border-border px-4 py-2 text-2xs text-muted">
-          Head hash <code className="text-fg">{v.head}</code>
+          {tr("Head hash")} <code className="text-fg">{v.head}</code>
         </p>
       )}
-      {loading ? <Skeleton className="m-4 h-24" /> : data?.entries.length ? <LedgerList entries={data.entries} /> : <EmptyState title="Ledger is empty" />}
+      {loading ? <Skeleton className="m-4 h-24" /> : data?.entries.length ? <LedgerList entries={data.entries} /> : <EmptyState title={tr("Ledger is empty")} />}
     </Card>
   );
 }
@@ -149,14 +152,14 @@ function Ledger() {
 export function AuditPage() {
   const [tab, setTab] = useState<"events" | "ledger">("events");
   return (
-    <Page title="Audit Logs" subtitle="Append-only record of every action by operators and agents. Source content is never written to the log.">
+    <Page title={tr("Audit Logs")} subtitle={tr("Append-only record of every action by operators and agents. Source content is never written to the log.")}>
       <Tabs<"events" | "ledger">
         className="mb-3"
         value={tab}
         onChange={setTab}
         tabs={[
-          { id: "events", label: "Audit events" },
-          { id: "ledger", label: "Provenance ledger" },
+          { id: "events", label: tr("Audit events") },
+          { id: "ledger", label: tr("Provenance ledger") },
         ]}
       />
       {tab === "events" ? <AuditTable /> : <Ledger />}

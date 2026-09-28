@@ -6,6 +6,7 @@ import { useAction } from "@/hooks/useAction";
 import { useApp } from "@/store/app";
 import { Button } from "../ui/Button";
 import { TextArea, TextInput } from "../ui/misc";
+import { tr } from "@/i18n";
 
 /** Field-level editor. Saving creates a new version authored by the operator and re-runs verification. */
 export function ArtifactEditor({ t, a, onClose }: { t: Transformation; a: Artifact; onClose: () => void }) {
@@ -15,22 +16,22 @@ export function ArtifactEditor({ t, a, onClose }: { t: Transformation; a: Artifa
   const [q, setQ] = useState("");
   const setT = useApp((s) => s.setTransformation);
   const toast = useApp((s) => s.toast);
-  const { run, pending } = useAction(api.edit, { errorTitle: "Could not save edit" });
+  const { run, pending } = useAction(api.edit, { errorTitle: tr("Could not save edit") });
   const changed = fields.filter((f) => draft[f.path] !== f.value);
   const shown = fields.filter((f) => !q || `${f.path} ${draft[f.path]}`.toLowerCase().includes(q.toLowerCase()));
 
   const save = async () => {
     let content = a.content!;
     changed.forEach((f) => (content = setPath(content, f.path, draft[f.path])));
-    const r = await run(t.id, a.type, content, note || `Edited ${changed.length} field(s)`);
+    const r = await run(t.id, a.type, content, note || tr("Edited {n} field(s)", { n: changed.length }));
     if (r) {
       setT(r);
       const na = r.artifacts[a.type];
       const issues = na?.verification ? na.verification.counts.drift + na.verification.counts.unsupported + na.verification.counts.uncertainty : 0;
       toast({
         tone: issues ? "warning" : "success",
-        title: `Saved as v${na?.version}`,
-        body: issues ? `Verification found ${issues} issue(s) in your edit.` : "Re-verified against the evidence ledger.",
+        title: tr("Saved as v{n}", { n: na?.version ?? "" }),
+        body: issues ? tr("Verification found {n} issue(s) in your edit.", { n: issues }) : tr("Re-verified against the evidence ledger."),
       });
       onClose();
     }
@@ -39,8 +40,8 @@ export function ArtifactEditor({ t, a, onClose }: { t: Transformation; a: Artifa
   return (
     <div className="rounded-xl border border-accent-line bg-surface">
       <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2.5">
-        <p className="flex-1 text-xs font-semibold">Edit {a.label}</p>
-        <TextInput className="h-8 max-w-56" placeholder="Filter fields…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Filter fields" />
+        <p className="flex-1 text-xs font-semibold">{tr("Edit {label}", { label: tr(a.label) })}</p>
+        <TextInput className="h-8 max-w-56" placeholder={tr("Filter fields…")} value={q} onChange={(e) => setQ(e.target.value)} aria-label={tr("Filter fields")} />
       </div>
       <div className="max-h-[60vh] space-y-3 overflow-y-auto px-4 py-3">
         {shown.map((f) => (
@@ -56,13 +57,13 @@ export function ArtifactEditor({ t, a, onClose }: { t: Transformation; a: Artifa
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-2.5">
-        <TextInput className="h-8 flex-1" placeholder="Edit note (recorded in version history)" value={note} onChange={(e) => setNote(e.target.value)} aria-label="Edit note" />
-        <span className="text-2xs text-subtle">{changed.length} changed</span>
+        <TextInput className="h-8 flex-1" placeholder={tr("Edit note (recorded in version history)")} value={note} onChange={(e) => setNote(e.target.value)} aria-label={tr("Edit note")} />
+        <span className="text-2xs text-subtle">{tr("{n} changed", { n: changed.length })}</span>
         <Button size="sm" variant="ghost" onClick={onClose}>
-          Cancel
+          {tr("Cancel")}
         </Button>
         <Button size="sm" variant="primary" disabled={!changed.length} loading={pending} onClick={() => void save()}>
-          Save & re-verify
+          {tr("Save & re-verify")}
         </Button>
       </div>
     </div>

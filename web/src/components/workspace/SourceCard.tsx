@@ -5,6 +5,7 @@ import type { SourceInfo } from "@/lib/types";
 import { Hash } from "../ui/misc";
 import { Modal } from "../ui/Overlay";
 import { api } from "@/lib/api";
+import { tr } from "@/i18n";
 
 function kindIcon(name: string, kind?: string) {
   const ext = fileExt(name).toLowerCase();
@@ -38,11 +39,11 @@ export function PendingSourceCard({ file, onRemove, onPreview }: { file: File; o
         </p>
       </div>
       {onPreview && (
-        <button type="button" onClick={onPreview} aria-label={`Preview ${file.name}`} className="rounded-md p-1 text-subtle hover:bg-surface-3 hover:text-fg">
+        <button type="button" onClick={onPreview} aria-label={tr("Preview {name}", { name: file.name })} className="rounded-md p-1 text-subtle hover:bg-surface-3 hover:text-fg">
           <Eye size={15} />
         </button>
       )}
-      <button type="button" onClick={onRemove} aria-label={`Remove ${file.name}`} className="rounded-md p-1 text-subtle hover:bg-surface-3 hover:text-fg">
+      <button type="button" onClick={onRemove} aria-label={tr("Remove {name}", { name: file.name })} className="rounded-md p-1 text-subtle hover:bg-surface-3 hover:text-fg">
         <X size={15} />
       </button>
     </div>
@@ -57,15 +58,15 @@ export function SourceCard({ tid, s }: { tid: string; s: SourceInfo }) {
   const status =
     s.status === "parsed" ? (
       <span className="inline-flex items-center gap-1 text-success">
-        <CheckCircle2 size={12} /> Parsed
+        <CheckCircle2 size={12} /> {tr("Parsed")}
       </span>
     ) : s.status === "failed" ? (
       <span className="inline-flex items-center gap-1 text-danger">
-        <AlertCircle size={12} /> Failed
+        <AlertCircle size={12} /> {tr("Failed")}
       </span>
     ) : (
       <span className="inline-flex items-center gap-1 text-accent">
-        <Loader2 size={12} className="animate-spin" /> Processing
+        <Loader2 size={12} className="animate-spin" /> {tr("Processing")}
       </span>
     );
   return (
@@ -100,7 +101,7 @@ export function SourceCard({ tid, s }: { tid: string; s: SourceInfo }) {
               }
             }
           }}
-          aria-label={`Preview ${s.name}`}
+          aria-label={tr("Preview {name}", { name: s.name })}
           className="rounded-md p-1 text-subtle hover:bg-surface-3 hover:text-fg"
         >
           <Eye size={15} />
@@ -109,13 +110,13 @@ export function SourceCard({ tid, s }: { tid: string; s: SourceInfo }) {
       <Modal open={open} onClose={() => setOpen(false)} title={s.name} width="max-w-3xl">
         <div className="mb-3 flex flex-wrap items-center gap-3 text-2xs text-muted">
           <span>SHA-256</span>
-          <Hash value={s.sha256} n={24} label="Source hash" />
+          <Hash value={s.sha256} n={24} label={tr("Source hash")} />
           <span>{s.words.toLocaleString()} words</span>
         </div>
         {s.notes.length > 0 && <p className="mb-3 text-2xs text-warning">{s.notes.join(" · ")}</p>}
-        <p className="mb-2 text-2xs text-subtle">Extracted text · treated as untrusted data</p>
+        <p className="mb-2 text-2xs text-subtle">{tr("Extracted text · treated as untrusted data")}</p>
         <pre className="max-h-[60vh] overflow-auto rounded-lg border border-border bg-surface-2 p-3 text-xs leading-relaxed whitespace-pre-wrap text-muted">
-          {text === null ? "Loading…" : text || "No text was extracted from this source."}
+          {text === null ? tr("Loading…") : text || tr("No text was extracted from this source.")}
         </pre>
       </Modal>
     </>

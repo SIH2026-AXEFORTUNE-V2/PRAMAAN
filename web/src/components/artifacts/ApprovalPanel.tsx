@@ -8,6 +8,7 @@ import { useApp } from "@/store/app";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { TextArea } from "../ui/misc";
+import { tr } from "@/i18n";
 
 function Gate({ label, state, detail }: { label: string; state: "pass" | "fail" | "pending"; detail?: string }) {
   return (
@@ -25,7 +26,7 @@ function Gate({ label, state, detail }: { label: string; state: "pass" | "fail" 
       )}
       <span className="flex-1 text-xs text-fg">{label}</span>
       <span className={cx("text-2xs font-semibold", state === "pass" ? "text-success" : state === "fail" ? "text-danger" : "text-warning")}>
-        {detail ?? (state === "pass" ? "Passed" : state === "fail" ? "Failed" : "Pending")}
+        {detail ?? (state === "pass" ? tr("Passed") : state === "fail" ? tr("Failed") : tr("Pending"))}
       </span>
     </li>
   );
@@ -35,7 +36,7 @@ function Gate({ label, state, detail }: { label: string; state: "pass" | "fail" 
 export function ApprovalPanel({ t, a, busy }: { t: Transformation; a: Artifact; busy: boolean }) {
   const [comment, setComment] = useState("");
   const setT = useApp((s) => s.setTransformation);
-  const { run, pending } = useAction(api.decide, { errorTitle: "Decision not recorded" });
+  const { run, pending } = useAction(api.decide, { errorTitle: tr("Decision not recorded") });
   const ver = a.verification;
   const verFail = !!ver && ver.counts.drift + ver.counts.unsupported + ver.counts.uncertainty > 0;
   const consistency = t.consistency.conflicts.some((c) => c.affected.includes(a.type));
@@ -52,22 +53,22 @@ export function ApprovalPanel({ t, a, busy }: { t: Transformation; a: Artifact; 
   };
 
   return (
-    <section className="rounded-xl border border-border bg-surface" aria-label="Human approval">
+    <section className="rounded-xl border border-border bg-surface" aria-label={tr("Human approval")}>
       <div className={cx("flex items-center gap-2 rounded-t-xl border-b border-border px-4 py-2.5", decided === "approved" ? "bg-success-soft" : decided === "rejected" ? "bg-danger-soft" : "bg-warning-soft")}>
         <p className="flex-1 text-2xs font-bold">
-          {decided === "approved" ? "Approved" : decided === "rejected" ? "Rejected" : decided === "changes_requested" ? "Changes requested" : "Review required"}
+          {decided === "approved" ? tr("Approved") : decided === "rejected" ? tr("Rejected") : decided === "changes_requested" ? tr("Changes requested") : tr("Review required")}
         </p>
         <span className="text-2xs text-muted">v{a.version}</span>
       </div>
       <ul className="px-4 py-2">
-        <Gate label="Verification" state={!ver ? "pending" : verFail ? "fail" : "pass"} detail={ver && ver.counts.review && !verFail ? `${ver.counts.review} to review` : undefined} />
-        <Gate label="Security" state={!sec ? "pending" : sec.blocked ? "fail" : "pass"} detail={sec?.review_required && !sec.blocked ? "Reviewer check" : undefined} />
-        <Gate label="Consistency" state={t.consistency.status === "pending" ? "pending" : consistency ? "fail" : "pass"} />
-        <Gate label="Evidence current" state={a.stale ? "fail" : "pass"} detail={a.stale ? "Evidence changed" : "Up to date"} />
+        <Gate label={tr("Verification")} state={!ver ? "pending" : verFail ? "fail" : "pass"} detail={ver && ver.counts.review && !verFail ? `${ver.counts.review} to review` : undefined} />
+        <Gate label={tr("Security")} state={!sec ? "pending" : sec.blocked ? "fail" : "pass"} detail={sec?.review_required && !sec.blocked ? tr("Reviewer check") : undefined} />
+        <Gate label={tr("Consistency")} state={t.consistency.status === "pending" ? "pending" : consistency ? "fail" : "pass"} />
+        <Gate label={tr("Evidence current")} state={a.stale ? "fail" : "pass"} detail={a.stale ? tr("Evidence changed") : tr("Up to date")} />
         <Gate
-          label="Human approval"
+          label={tr("Human approval")}
           state={decided === "approved" ? "pass" : decided === "rejected" ? "fail" : "pending"}
-          detail={decided === "approved" ? `${a.approval.by}` : decided === "pending" ? "Pending" : decided.replace("_", " ")}
+          detail={decided === "approved" ? `${a.approval.by}` : decided === "pending" ? tr("Pending") : decided.replace("_", " ")}
         />
       </ul>
       {decided === "approved" || decided === "rejected" ? (
@@ -75,32 +76,32 @@ export function ApprovalPanel({ t, a, busy }: { t: Transformation; a: Artifact; 
           {a.approval.by} · {dateTime(a.approval.at)}
           {a.approval.comment && <span className="block text-fg">“{a.approval.comment}”</span>}
           {a.approval.ledger_index !== undefined && <span className="block">Provenance ledger entry #{a.approval.ledger_index}</span>}
-          <p className="mt-1.5">A new version (edit or regeneration) resets approval.</p>
+          <p className="mt-1.5">{tr("A new version (edit or regeneration) resets approval.")}</p>
         </div>
       ) : (
         <div className="space-y-2 border-t border-border px-4 py-3">
-          <TextArea rows={2} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Comment (required to request changes or reject)" aria-label="Review comment" />
+          <TextArea rows={2} value={comment} onChange={(e) => setComment(e.target.value)} placeholder={tr("Comment (required to request changes or reject)")} aria-label={tr("Review comment")} />
           {!canApprove && a.content && (
             <p className="text-2xs text-danger">
-              {a.stale ? "Regenerate against the updated evidence first." : sec?.blocked ? "Security policy blocks release on this channel." : "Resolve verification issues before approval."}
+              {a.stale ? tr("Regenerate against the updated evidence first.") : sec?.blocked ? tr("Security policy blocks release on this channel.") : tr("Resolve verification issues before approval.")}
             </p>
           )}
           <div className="flex flex-wrap gap-1.5">
             <Button variant="primary" size="sm" icon={<Check size={13} />} disabled={!canApprove || busy} loading={pending} onClick={() => void decide("approve")}>
-              Approve
+              {tr("Approve")}
             </Button>
-            <Button size="sm" disabled={!comment.trim() || busy || !a.content} onClick={() => void decide("request_changes")} title="Regenerates this artefact with your comment as the instruction">
-              Request changes
+            <Button size="sm" disabled={!comment.trim() || busy || !a.content} onClick={() => void decide("request_changes")} title={tr("Regenerates this artefact with your comment as the instruction")}>
+              {tr("Request changes")}
             </Button>
             <Button size="sm" variant="danger" disabled={!comment.trim() || busy || !a.content} onClick={() => void decide("reject")}>
-              Reject
+              {tr("Reject")}
             </Button>
           </div>
         </div>
       )}
       {a.approval.history.length > 0 && (
         <details className="border-t border-border px-4 py-2 text-2xs text-muted">
-          <summary className="cursor-pointer">Decision history ({a.approval.history.length})</summary>
+          <summary className="cursor-pointer">{tr("Decision history ({n})", { n: a.approval.history.length })}</summary>
           <ul className="mt-1 space-y-0.5">
             {a.approval.history.map((h, i) => (
               <li key={i}>

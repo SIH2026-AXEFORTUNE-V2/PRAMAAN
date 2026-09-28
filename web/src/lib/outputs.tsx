@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Clapperboard, FileText, Image, Presentation, ShieldAlert } from "lucide-react";
 import type { OutputType } from "./types";
+import { tr } from "@/i18n";
 
 /* Brand glyphs drawn inline (icon libraries no longer ship brand marks). */
 function LinkedInGlyph({ size = 16 }: { size?: number }) {
@@ -31,13 +32,13 @@ export const OUTPUT_ORDER: OutputType[] = [
 ];
 
 export const OUTPUT_SHORT: Record<OutputType, string> = {
-  executive_summary: "Executive Summary",
-  advisory: "Advisory",
-  linkedin: "LinkedIn",
-  twitter: "X Thread",
-  infographic: "Infographic",
-  presentation: "Presentation",
-  video: "Video Package",
+  get executive_summary() { return tr("Executive Summary"); },
+  get advisory() { return tr("Advisory"); },
+  get linkedin() { return tr("LinkedIn"); },
+  get twitter() { return tr("X Thread"); },
+  get infographic() { return tr("Infographic"); },
+  get presentation() { return tr("Presentation"); },
+  get video() { return tr("Video Package"); },
 };
 
 export function OutputIcon({ type, size = 16 }: { type: OutputType; size?: number }): ReactNode {

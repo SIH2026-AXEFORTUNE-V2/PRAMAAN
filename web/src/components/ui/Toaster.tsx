@@ -1,6 +1,7 @@
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
 import { cx } from "@/lib/format";
 import { useApp } from "@/store/app";
+import { tr } from "@/i18n";
 
 const ICON = {
   success: <CheckCircle2 size={16} className="text-success" />,
@@ -21,7 +22,7 @@ export function Toaster() {
             <p className="text-xs font-semibold text-fg">{t.title}</p>
             {t.body && <p className="mt-0.5 text-2xs leading-relaxed text-muted">{t.body}</p>}
           </div>
-          <button type="button" aria-label="Dismiss" onClick={() => dismiss(t.id)} className="rounded p-0.5 text-subtle hover:text-fg">
+          <button type="button" aria-label={tr("Dismiss")} onClick={() => dismiss(t.id)} className="rounded p-0.5 text-subtle hover:text-fg">
             <X size={14} />
           </button>
         </div>

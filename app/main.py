@@ -144,7 +144,7 @@ def _deployment() -> dict:
     if config.MODEL_GATEWAY_URL:
         return {"mode": "on_prem", "label": "On-Prem", "detail": "All model calls go to the self-hosted gateway."}
     if orc.LIVE:
-        via = "GroqCloud" if config.LLM_PROVIDER == "groq" else "Hugging Face Inference Providers"
+        via = {"openai": "OpenAI", "groq": "GroqCloud"}.get(config.LLM_PROVIDER, "Hugging Face Inference Providers")
         return {"mode": "hybrid", "label": "Hybrid", "detail": f"App and data stay on this server; model inference uses {via}. "
                 "Credentials and injected instructions are withheld from model context."}
     return {"mode": "offline", "label": "Offline", "detail": "No model gateway configured; offline extractive engine."}
@@ -171,9 +171,11 @@ async def get_config():
                           "exports": v["exports"]} for k, v in OUTPUT_TYPES.items()],
         "parameters": PARAMETERS,
         "operator": {"name": st["operator_name"], "role": st["operator_role"]},
-        "image_generation": {"available": imagegen.available(), "model": config.IMAGE_MODEL if imagegen.available() else None},
+        "image_generation": {"available": imagegen.available(), "model": imagegen.model_name() if imagegen.available() else None,
+                             "infographic_design": bool(config.OPENAI_API_KEY),
+                             "infographic_model": config.OPENAI_INFOGRAPHIC_MODEL if config.OPENAI_API_KEY else None},
         "video_production": {"available": videogen.tts_available(), "motion": videogen.motion_available(),
-                             "narration_model": config.TTS_MODEL, "motion_model": config.VIDEO_MODEL if videogen.motion_available() else None},
+                             "narration_model": videogen.tts_model(), "motion_model": config.VIDEO_MODEL if videogen.motion_available() else None},
         "workspace": st["workspace_name"],
     }
 
@@ -540,7 +542,7 @@ async def render_video(tid: str):
     a = _art(t, "video")
     _idle(t)
     if not videogen.tts_available():
-        raise HTTPException(409, "Video production needs Cloudflare Workers AI (CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_API_TOKEN).")
+        raise HTTPException(409, "Video production needs text-to-speech (OPENAI_API_KEY, or CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_API_TOKEN).")
     if not a["content"]:
         raise HTTPException(409, "Generate the video package first.")
     issues = orc.narration_issues(t)
@@ -548,6 +550,42 @@ async def render_video(tid: str):
         raise HTTPException(409, f"{len(issues)} narration line(s) failed verification. Repair them first so nothing false is spoken.")
     orc.spawn(orc.render_video(t))
     return {"accepted": True}
+
+
+@app.post("/api/transformations/{tid}/artifacts/infographic/design")
+async def design_infographic(tid: str):
+    t = _t(tid)
+    a = _art(t, "infographic")
+    _idle(t)
+    if not config.OPENAI_API_KEY:
+        raise HTTPException(409, "Designed infographics need an OpenAI image model (OPENAI_API_KEY).")
+    if not a["content"]:
+        raise HTTPException(409, "Generate the infographic first.")
+    if (a.get("verification") or {}).get("status") == "failed":
+        raise HTTPException(409, "Resolve the infographic's verification issues first so nothing false is drawn.")
+    orc.spawn(orc.design_infographic(t))
+    return {"accepted": True}
+
+
+@app.get("/api/transformations/{tid}/artifacts/infographic/design.jpg")
+async def infographic_design(tid: str):
+    _art(_t(tid), "infographic")
+    p = orc.design_path(tid)
+    if not p.exists():
+        raise HTTPException(404, "No designed infographic yet")
+    return FileResponse(p, media_type="image/jpeg", headers={"Cache-Control": "private, no-cache"})
+
+
+def _design_ok(a: dict) -> str | None:
+    """Why the designed infographic cannot be exported, or None when it can."""
+    d = a.get("design")
+    if not d:
+        return "Design the infographic first."
+    if d["artifact_version"] != a["version"]:
+        return f"The design was drawn from v{d['artifact_version']}; re-render it for v{a['version']}."
+    if d["readback"]["status"] == "issues":
+        return "The design failed read-back verification; re-render it before export."
+    return None
 
 
 @app.get("/api/transformations/{tid}/artifacts/video/video.mp4")
@@ -629,6 +667,12 @@ async def export(tid: str, otype: str, fmt: str):
             raise HTTPException(404, "Render the video first.")
         orc.record_export(t, otype, fmt)
         return FileResponse(p, media_type="video/mp4", filename=exporters.filename(t, otype, fmt))
+    if fmt == "jpg":
+        why = _design_ok(a) if otype == "infographic" else "JPG export is only available for the designed infographic."
+        if why:
+            raise HTTPException(409, why)
+        orc.record_export(t, otype, fmt)
+        return FileResponse(orc.design_path(tid), media_type="image/jpeg", filename=exporters.filename(t, otype, fmt))
     try:
         body = exporters.render(otype, fmt, a["released"], _footer(t, a), _slide_images(tid, otype))
     except ValueError as e:
@@ -643,11 +687,15 @@ async def export_bundle(tid: str):
     t = _t(tid)
     if not any(a["approval"]["status"] == "approved" for a in t["artifacts"].values()):
         raise HTTPException(403, "Approve at least one artefact before exporting a bundle.")
-    data = exporters.bundle(t, lambda a: _footer(t, a), lambda o: _image_files(tid, o),
-                            lambda o: {"video/pramaan-video.mp4": orc.video_path(tid).read_bytes(),
-                                       "video/production-script.md": videogen.production_script(
-                                           t["title"], tid, t["artifacts"]["video"]["video_render"]).encode()}
-                            if o == "video" and orc.video_path(tid).exists() and t["artifacts"]["video"].get("video_render") else {})
+    def attachments(o: str) -> dict[str, bytes]:
+        if o == "infographic" and not _design_ok(t["artifacts"]["infographic"]):
+            return {"infographic/designed-infographic.jpg": orc.design_path(tid).read_bytes()}
+        if o == "video" and orc.video_path(tid).exists() and t["artifacts"]["video"].get("video_render"):
+            return {"video/pramaan-video.mp4": orc.video_path(tid).read_bytes(),
+                    "video/production-script.md": videogen.production_script(t["title"], tid, t["artifacts"]["video"]["video_render"]).encode()}
+        return {}
+
+    data = exporters.bundle(t, lambda a: _footer(t, a), lambda o: _image_files(tid, o), attachments)
     ledger.audit("Bundle exported", tid, actor=settings.operator(), actor_type="user", transformation_id=tid)
     return Response(data, media_type="application/zip",
                     headers={"Content-Disposition": f'attachment; filename="{tid}-approved-bundle.zip"'})

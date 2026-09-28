@@ -7,6 +7,7 @@ import type { LedgerEntry, Transformation } from "@/lib/types";
 import { Badge } from "../ui/Badge";
 import { Card, CardHeader } from "../ui/Card";
 import { Hash } from "../ui/misc";
+import { tr } from "@/i18n";
 
 function ChainNode({ label, children, sub }: { label: string; children: React.ReactNode; sub?: string }) {
   return (
@@ -68,10 +69,10 @@ export function ProvenancePanel({ t }: { t: Transformation }) {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_1fr]">
         <Card className="p-4">
           <p className="mb-3 flex items-center gap-2 text-xs font-semibold">
-            <Link2 size={15} className="text-accent" /> Verifiable lineage
+            <Link2 size={15} className="text-accent" /> {tr("Verifiable lineage")}
           </p>
           <div className="space-y-1.5">
-            <ChainNode label="Source hash" sub={t.sources.map((s) => s.name).join(", ")}>
+            <ChainNode label={tr("Source hash")} sub={t.sources.map((s) => s.name).join(", ")}>
               {Object.entries(t.provenance.source_hashes).map(([k, h]) => (
                 <span key={k} className="inline-flex items-center gap-1 text-2xs text-muted">
                   {k} <Hash value={h} />
@@ -79,20 +80,20 @@ export function ProvenancePanel({ t }: { t: Transformation }) {
               ))}
             </ChainNode>
             <ArrowDown size={14} className="mx-auto text-subtle" />
-            <ChainNode label="Evidence state hash" sub={`${t.claims.length} claims`}>
+            <ChainNode label={tr("Evidence state hash")} sub={`${t.claims.length} claims`}>
               <Hash value={t.provenance.evidence_hash} n={16} />
             </ChainNode>
             <ArrowDown size={14} className="mx-auto text-subtle" />
-            <ChainNode label="Transformation" sub={`Contract v${t.contract.version}`}>
+            <ChainNode label={tr("Transformation")} sub={tr("Contract v{n}", { n: t.contract.version })}>
               <span className="font-semibold">{t.id}</span>
-              <Hash value={t.provenance.contract_hash} label="Contract hash" />
+              <Hash value={t.provenance.contract_hash} label={tr("Contract hash")} />
             </ChainNode>
             <ArrowDown size={14} className="mx-auto text-subtle" />
-            <ChainNode label="Output hashes">
+            <ChainNode label={tr("Output hashes")}>
               <span className="text-2xs text-muted">{arts.length} artefacts · see table</span>
             </ChainNode>
             <ArrowDown size={14} className="mx-auto text-subtle" />
-            <ChainNode label="Approval events">
+            <ChainNode label={tr("Approval events")}>
               <span className="text-2xs text-muted">
                 {arts.filter((a) => a.approval.status === "approved").length} approved · {arts.filter((a) => a.approval.status === "rejected").length} rejected
               </span>
@@ -102,11 +103,11 @@ export function ProvenancePanel({ t }: { t: Transformation }) {
         <Card>
           <CardHeader
             icon={<Fingerprint size={16} />}
-            title="Output provenance"
-            subtitle="Current version of each artefact, its hash and the approval it carries."
+            title={tr("Output provenance")}
+            subtitle={tr("Current version of each artefact, its hash and the approval it carries.")}
             actions={
               <button type="button" onClick={() => setShowContract((s) => !s)} className="text-2xs font-semibold text-accent hover:underline">
-                {showContract ? "Hide" : "View"} contract
+                {showContract ? tr("Hide") : tr("View")} contract
               </button>
             }
           />
@@ -115,11 +116,11 @@ export function ProvenancePanel({ t }: { t: Transformation }) {
             <table className="w-full min-w-[640px] text-xs">
               <thead>
                 <tr className="border-b border-border text-left text-2xs text-subtle">
-                  <th className="px-4 py-2 font-semibold">Artefact</th>
-                  <th className="px-2 py-2 font-semibold">Version</th>
-                  <th className="px-2 py-2 font-semibold">Agent · model</th>
-                  <th className="px-2 py-2 font-semibold">Output hash</th>
-                  <th className="px-2 py-2 font-semibold">Approval</th>
+                  <th className="px-4 py-2 font-semibold">{tr("Artefact")}</th>
+                  <th className="px-2 py-2 font-semibold">{tr("Version")}</th>
+                  <th className="px-2 py-2 font-semibold">{tr("Agent · model")}</th>
+                  <th className="px-2 py-2 font-semibold">{tr("Output hash")}</th>
+                  <th className="px-2 py-2 font-semibold">{tr("Approval")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -129,7 +130,7 @@ export function ProvenancePanel({ t }: { t: Transformation }) {
                     <tr key={a.type} className="border-b border-border last:border-0">
                       <td className="px-4 py-2.5">
                         <span className="inline-flex items-center gap-2 font-medium">
-                          <OutputIcon type={a.type} size={14} /> {a.label}
+                          <OutputIcon type={a.type} size={14} /> {tr(a.label)}
                         </span>
                       </td>
                       <td className="px-2 py-2.5 text-muted">v{a.version}</td>
@@ -142,12 +143,12 @@ export function ProvenancePanel({ t }: { t: Transformation }) {
                       <td className="px-2 py-2.5">
                         {a.approval.status === "approved" ? (
                           <Badge tone="success">
-                            Approved · {a.approval.by} · #{a.approval.ledger_index}
+                            {tr("Approved")} · {a.approval.by} · #{a.approval.ledger_index}
                           </Badge>
                         ) : a.approval.status === "rejected" ? (
-                          <Badge tone="danger">Rejected</Badge>
+                          <Badge tone="danger">{tr("Rejected")}</Badge>
                         ) : (
-                          <Badge tone="warning">Pending</Badge>
+                          <Badge tone="warning">{tr("Pending")}</Badge>
                         )}
                       </td>
                     </tr>
@@ -160,17 +161,17 @@ export function ProvenancePanel({ t }: { t: Transformation }) {
       </div>
       <Card>
         <CardHeader
-          title="Ledger entries for this transformation"
+          title={tr("Ledger entries for this transformation")}
           subtitle={ledger?.note}
           actions={
             v && (
               <Badge tone={v.valid ? "success" : "danger"}>
-                {v.valid ? <ShieldCheck size={12} /> : <ShieldX size={12} />} Chain {v.valid ? "valid" : `broken at #${v.broken_at}`} · {v.entries} entries
+                {v.valid ? <ShieldCheck size={12} /> : <ShieldX size={12} />} {v.valid ? tr("Chain valid") : tr("Chain broken at #{n}", { n: v.broken_at ?? "" })} · {tr("{n} entries", { n: v.entries })}
               </Badge>
             )
           }
         />
-        {ledger ? <LedgerList entries={ledger.entries} /> : <p className="px-4 py-6 text-center text-2xs text-subtle">Loading ledger…</p>}
+        {ledger ? <LedgerList entries={ledger.entries} /> : <p className="px-4 py-6 text-center text-2xs text-subtle">{tr("Loading ledger…")}</p>}
       </Card>
     </div>
   );

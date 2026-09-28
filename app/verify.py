@@ -92,8 +92,11 @@ def verify_artifact(content: dict, claims: list[dict], corpus: str) -> dict:
                 best_aff = _affinity(skw, best) if best else 0
                 if exact:
                     target = max(exact, key=lambda c: _affinity(skw, c))
+                    # an exact match is only overridden when the sentence names the other claim's attribute
+                    # (e.g. "detected on <containment date>"), not merely because it shares context words
                     if best and best is not target and best["normalized"]["value"] not in sentence_isos \
-                            and best_aff >= 2 and best_aff > _affinity(skw, target) + 1:
+                            and best_aff >= 2 and best_aff > _affinity(skw, target) + 1 \
+                            and len(ev.label_keywords(best["label"]) & skw) > len(ev.label_keywords(target["label"]) & skw):
                         issues.append({"kind": "drift", "claim_id": best["claim_id"], "expected": best["display_value"],
                                        "found": d["surface"], "detail": f"States {d['surface']} for '{best['label']}'; evidence says {best['display_value']}."})
                         linked[best["claim_id"]] = best

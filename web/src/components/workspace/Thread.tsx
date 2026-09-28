@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { time } from "@/lib/format";
 import { BrandMark } from "../shell/Brand";
+import { tr } from "@/i18n";
 
 export function UserTurn({ name, ts, children }: { name: string; ts: string; children: ReactNode }) {
   return (
@@ -18,7 +19,7 @@ export function UserTurn({ name, ts, children }: { name: string; ts: string; chi
   );
 }
 
-export function AgentTurn({ ts, title = "PRAMAAN Orchestrator", children }: { ts?: string; title?: string; children: ReactNode }) {
+export function AgentTurn({ ts, title, children }: { ts?: string; title?: string; children: ReactNode }) {
   return (
     <div className="flex gap-3">
       <span className="shrink-0" aria-hidden>
@@ -26,7 +27,7 @@ export function AgentTurn({ ts, title = "PRAMAAN Orchestrator", children }: { ts
       </span>
       <div className="min-w-0 flex-1">
         <p className="mb-2 text-sm">
-          <span className="font-semibold text-fg">{title}</span> {ts && <span className="text-subtle">{time(ts)}</span>}
+          <span className="font-semibold text-fg">{title ?? tr("PRAMAAN Orchestrator")}</span> {ts && <span className="text-subtle">{time(ts)}</span>}
         </p>
         <div className="space-y-5">{children}</div>
       </div>

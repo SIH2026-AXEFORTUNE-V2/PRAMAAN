@@ -1,27 +1,28 @@
+import { locale, tr } from "@/i18n";
+
 export function time(iso: string | null | undefined): string {
   if (!iso) return "—";
-  const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" });
 }
 
 export function timeSec(iso: string | null | undefined): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return new Date(iso).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
 export function dateTime(iso: string | null | undefined): string {
   if (!iso) return "—";
-  const d = new Date(iso);
-  return d.toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleString(locale(), { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
 export function relative(iso: string | null | undefined): string {
   if (!iso) return "—";
   const s = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 45) return "just now";
-  if (s < 3600) return `${Math.round(s / 60)} min ago`;
-  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
-  return `${Math.round(s / 86400)} d ago`;
+  const rtf = new Intl.RelativeTimeFormat(locale(), { numeric: "auto" });
+  if (s < 45) return rtf.format(0, "second");
+  if (s < 3600) return rtf.format(-Math.round(s / 60), "minute");
+  if (s < 86400) return rtf.format(-Math.round(s / 3600), "hour");
+  return rtf.format(-Math.round(s / 86400), "day");
 }
 
 export function bytes(n: number): string {
@@ -33,9 +34,10 @@ export function bytes(n: number): string {
 
 export function duration(sec: number | null | undefined): string {
   if (sec === null || sec === undefined) return "—";
-  if (sec < 1) return "<1s";
-  if (sec < 60) return `${sec.toFixed(sec < 10 ? 1 : 0)}s`;
-  return `${Math.floor(sec / 60)}m ${Math.round(sec % 60)}s`;
+  const nf = (n: number, d = 0) => n.toLocaleString(locale(), { maximumFractionDigits: d });
+  if (sec < 1) return tr("<1s");
+  if (sec < 60) return tr("{n}s", { n: nf(sec, sec < 10 ? 1 : 0) });
+  return tr("{m}m {s}s", { m: nf(Math.floor(sec / 60)), s: nf(Math.round(sec % 60)) });
 }
 
 export function shortHash(h: string | null | undefined, n = 10): string {

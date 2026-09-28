@@ -3,6 +3,7 @@ import { AlertTriangle, Ban, Check, CircleDashed, Clock3, Loader2, X } from "luc
 import { cx } from "@/lib/format";
 import { TONE_CLASSES, type Tone } from "@/lib/status";
 import type { TaskStatus } from "@/lib/types";
+import { tr } from "@/i18n";
 
 export function Badge({ tone = "neutral", children, className, dot }: { tone?: Tone; children: ReactNode; className?: string; dot?: boolean }) {
   const c = TONE_CLASSES[tone];
@@ -44,24 +45,24 @@ export function StatusIcon({ status, size = 16 }: { status: TaskStatus; size?: n
   switch (status) {
     case "completed":
       return (
-        <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-success text-surface" style={{ width: s, height: s }} aria-label="Completed">
+        <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-success text-surface" style={{ width: s, height: s }} aria-label={tr("Completed")}>
           <Check size={s * 0.68} strokeWidth={3} />
         </span>
       );
     case "running":
-      return <Loader2 size={s} className="shrink-0 animate-spin text-accent" aria-label="Running" />;
+      return <Loader2 size={s} className="shrink-0 animate-spin text-accent" aria-label={tr("Running")} />;
     case "failed":
       return (
-        <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-danger text-surface" style={{ width: s, height: s }} aria-label="Failed">
+        <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-danger text-surface" style={{ width: s, height: s }} aria-label={tr("Failed")}>
           <X size={s * 0.68} strokeWidth={3} />
         </span>
       );
     case "blocked":
-      return <Ban size={s} className="shrink-0 text-danger" aria-label="Blocked" />;
+      return <Ban size={s} className="shrink-0 text-danger" aria-label={tr("Blocked")} />;
     case "needs_review":
-      return <AlertTriangle size={s} className="shrink-0 text-warning" aria-label="Needs review" />;
+      return <AlertTriangle size={s} className="shrink-0 text-warning" aria-label={tr("Needs review")} />;
     default:
-      return <CircleDashed size={s} className="shrink-0 text-subtle" aria-label="Queued" />;
+      return <CircleDashed size={s} className="shrink-0 text-subtle" aria-label={tr("Queued")} />;
   }
 }
 
