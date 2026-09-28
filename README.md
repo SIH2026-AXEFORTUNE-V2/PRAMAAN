@@ -9,7 +9,7 @@ PRAMAAN is not a chatbot or a plain content generator. Every factual statement i
 Requirements: Python 3.10+, Node.js 20+.
 
 ```bash
-cp .env.example .env        # add HF_TOKEN (Inference Providers permission) or MODEL_GATEWAY_URL
+cp .env.example .env        # add GROQ_API_KEY (free), or HF_TOKEN / MODEL_GATEWAY_URL
 ./run.sh                    # venv + pip + web build, serves http://127.0.0.1:8000
 ```
 
@@ -43,6 +43,7 @@ Development (hot reload): `uvicorn app.main:app --reload --port 8000` and `cd we
 
 | Variable | Purpose |
 |---|---|
+| `GROQ_API_KEY` | **Recommended.** GroqCloud key: text agents run on `openai/gpt-oss-120b` (overflow to `gpt-oss-20b`), speech on Whisper. Free tier ≈1,000 requests/day and 8k tokens/min per model; the engine honours retry-after and overflows between models. |
 | `HF_TOKEN` | Hugging Face token with *Make calls to Inference Providers*. Free accounts have a small monthly credit; HTTP 402 means it is used up. |
 | `HF_TEXT_MODEL` | Comma-separated text models, tried in order |
 | `HF_VISION_MODEL`, `HF_ASR_MODEL` | Perception for images/scans/video and speech |

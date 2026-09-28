@@ -36,10 +36,22 @@ HF_MAX_TOKENS = int(os.getenv("HF_MAX_TOKENS", "6000"))
 # When set, all model calls go to this endpoint instead of Hugging Face Inference Providers.
 MODEL_GATEWAY_URL = os.getenv("MODEL_GATEWAY_URL", "").strip()
 
+# GroqCloud (OpenAI-compatible). Generous free tier: per-model daily request and per-minute token budgets.
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
+GROQ_BASE_URL = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1").strip()
+GROQ_TEXT_MODELS = _list("GROQ_TEXT_MODEL", "openai/gpt-oss-120b,openai/gpt-oss-20b")
+GROQ_ASR_MODEL = os.getenv("GROQ_ASR_MODEL", "whisper-large-v3-turbo").strip()
+GROQ_MAX_TOKENS = int(os.getenv("GROQ_MAX_TOKENS", "3500"))
+
+# Which text engine to use: auto (Groq > self-hosted gateway > Hugging Face), or force one.
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "auto").strip().lower()
+if LLM_PROVIDER == "auto":
+    LLM_PROVIDER = "groq" if GROQ_API_KEY else ("gateway" if MODEL_GATEWAY_URL else ("huggingface" if HF_TOKEN else "offline"))
+
 # Demo mode runs the full pipeline with a deterministic offline engine, so the
 # dashboard can be explored without a token. It is enabled automatically when no
 # token is configured, or explicitly with PRAMAAN_DEMO_MODE=1.
-DEMO_MODE = (not HF_TOKEN and not MODEL_GATEWAY_URL) or os.getenv("PRAMAAN_DEMO_MODE", "0") == "1"
+DEMO_MODE = LLM_PROVIDER == "offline" or os.getenv("PRAMAAN_DEMO_MODE", "0") == "1"
 
 # Access gate for any non-local deployment: HTTP Basic auth (any username, this password).
 ACCESS_PASSWORD = os.getenv("PRAMAAN_ACCESS_PASSWORD", "").strip()
@@ -47,7 +59,10 @@ ACCESS_PASSWORD = os.getenv("PRAMAAN_ACCESS_PASSWORD", "").strip()
 MAX_UPLOAD_MB = int(os.getenv("PRAMAAN_MAX_UPLOAD_MB", "50"))
 # Open models have smaller context windows than frontier APIs; keep sources to a safe size.
 MAX_SOURCE_CHARS = int(os.getenv("PRAMAAN_MAX_SOURCE_CHARS", "60000"))
-MAX_PARALLEL_AGENTS = int(os.getenv("PRAMAAN_MAX_PARALLEL", "4"))
+# Groq's free tier has small per-minute token budgets, so run fewer agents at once there.
+MAX_PARALLEL_AGENTS = int(os.getenv("PRAMAAN_MAX_PARALLEL", "2" if LLM_PROVIDER == "groq" else "4"))
+# Writers work from the evidence ledger; they only need a source excerpt for wording and context.
+WRITER_SOURCE_CHARS = int(os.getenv("PRAMAAN_WRITER_SOURCE_CHARS", "6000" if LLM_PROVIDER == "groq" else "24000"))
 
 DATA_DIR = Path(os.getenv("PRAMAAN_DATA_DIR", BASE_DIR / "data"))
 JOBS_DIR = DATA_DIR / "transformations"

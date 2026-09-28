@@ -193,6 +193,14 @@ def sentence_at(text: str, start: int, end: int) -> tuple[int, int]:
     return a, min(b, len(text))
 
 
+NUM_WORD_RX = re.compile(r"\b(" + "|".join(NUM_WORDS) + r")\b", re.I)
+
+
+def _digits(text: str) -> str:
+    """Lower-case, collapse whitespace and write number words as digits ("Four of the 12" == "4 of the 12")."""
+    return NUM_WORD_RX.sub(lambda m: str(NUM_WORDS[m.group(1).lower()]), re.sub(r"\s+", " ", text.lower()))
+
+
 def value_in(value: str, text: str, year: int | None) -> bool:
     nv = normalise(value, year)
     if nv["type"] == "date":
@@ -200,7 +208,7 @@ def value_in(value: str, text: str, year: int | None) -> bool:
     if nv["type"] == "number":
         dates = [d["span"] for d in parse_dates(text, year)]
         return any(n["value"] == nv["value"] for n in parse_numbers(text, dates))
-    return nv["value"] in re.sub(r"\s+", " ", text.lower())
+    return _digits(nv["value"]) in _digits(text)
 
 
 def locate(source: Source, quote: str, value: str) -> dict:
@@ -223,6 +231,9 @@ def locate(source: Source, quote: str, value: str) -> dict:
         cands = [tuple(n["span"]) for n in parse_numbers(text, dates) if n["value"] == nv["value"]]
     elif len(nv["value"]) >= 3:
         cands = [m.span() for m in re.finditer(re.escape(value.strip()), text, re.I)]
+        if not cands:
+            dv = _digits(value.strip())
+            cands = [m.span() for m in re.finditer(r"[^.!?]+[.!?]", text) if dv in _digits(m.group())]
         if not cands:
             # list-like text values ("payroll server, file server"): every value word must sit in one sentence
             vk = keywords(value)
@@ -345,6 +356,37 @@ def _same_attribute(a: dict, b: dict) -> bool:
     ea = keywords(a["claim"]) - keywords(str(a["value"]))
     eb = keywords(b["claim"]) - keywords(str(b["value"]))
     return a["category"] == b["category"] and len(ea & eb) >= 3
+
+
+def reconcile_modality(claims: list[dict], sources: list[Source]) -> None:
+    """A hedged claim is upgraded when any source states the same value plainly about the same thing.
+
+    e.g. a field note *reports* "three systems were affected" while the assessment report states it as fact.
+    The corroborating statement is recorded so the upgrade is itself traceable.
+    """
+    for c in claims:
+        if c["modality"] == "confirmed" or c["status"] in ("unsupported", "superseded"):
+            continue
+        label_kw = keywords(c["label"]) - keywords(str(c["value"]))
+        for s in sources:
+            text = s.text or ""
+            year = doc_year(text)
+            for m in re.finditer(r"[^.!?\n]+(?:\n(?=[a-z])[^.!?\n]+)*[.!?]", text):
+                sent = re.sub(r"\s+", " ", m.group()).strip()
+                if sent == re.sub(r"\s+", " ", c["evidence_text"]).strip():
+                    continue
+                if modality(sent) != "confirmed" or not value_in(str(c["value"]), sent, year):
+                    continue
+                if label_kw and not (label_kw & keywords(sent)):
+                    continue
+                c["corroborated_by"].append({"source_id": s.id, "source_name": s.name, "page": s.page_of(m.start()),
+                                             "evidence_text": sent, "modality": "confirmed"})
+                c["grounding_note"] += f" Stated as fact in {s.name}" + (f" p.{s.page_of(m.start())}" if s.page_of(m.start()) else "") + \
+                    f"; certainty raised from '{c['modality']}' to 'confirmed'."
+                c["modality"] = "confirmed"
+                break
+            if c["modality"] == "confirmed":
+                break
 
 
 def merge_sources(per_source: list[list[dict]]) -> tuple[list[dict], list[dict]]:

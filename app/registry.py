@@ -48,6 +48,24 @@ AGENTS = [
 def model_router(live) -> list[dict]:
     gw = "Self-hosted gateway" if config.MODEL_GATEWAY_URL else "Hugging Face Inference Providers"
     on = live is not None
+    if config.LLM_PROVIDER == "groq":
+        vis = "active" if config.HF_TOKEN else "not_configured"
+
+        def r(cap, label, models, status, via, note=""):
+            return {"capability": cap, "label": label, "models": models, "status": status, "via": via, "note": note}
+        return [
+            r("text_reasoning", "Text reasoning & generation", config.GROQ_TEXT_MODELS, "active", "GroqCloud",
+              "Strongest model first; overflows to the next when its per-minute budget is used."),
+            r("translation", "Translation", config.GROQ_TEXT_MODELS[:1], "active", "GroqCloud", "Language-constrained generation."),
+            r("speech_to_text", "Speech-to-text", [config.GROQ_ASR_MODEL], "active", "GroqCloud"),
+            r("multimodal_understanding", "Multimodal understanding / OCR", config.HF_VISION_MODELS if config.HF_TOKEN else [], vis,
+              "Hugging Face" if config.HF_TOKEN else "—", "Images and scanned PDFs; text PDFs do not need it."),
+            r("document_parsing", "Document parsing", ["pypdf", "pypdfium2", "python-docx", "python-pptx"], "active", "Local"),
+            r("policy_engine", "Security policy engine", ["PRAMAAN rules"], "active", "Local", "Deterministic detectors."),
+            r("deterministic_verifier", "Verification", ["PRAMAAN verifier"], "active", "Local", "Deterministic checks."),
+            r("hash_chain", "Provenance", ["SHA-256 hash chain"], "active", "Local"),
+            r("embedding", "Embeddings (retrieval)", [], "not_configured", "—", "Not needed for single-source transformation."),
+        ]
 
     def row(cap, label, models, status, via, note=""):
         return {"capability": cap, "label": label, "models": models, "status": status, "via": via, "note": note}

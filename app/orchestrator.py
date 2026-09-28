@@ -25,6 +25,7 @@ import time
 
 from . import config, evidence as ev, ledger, perception, prompts, quality, security, settings, verify
 from .catalog import BRIEF_SCHEMA, OUTPUT_TYPES, audience_text
+from .groq_engine import GroqEngine
 from .hf_engine import EngineError, HFEngine
 from .ingest import Source
 from .scripted_engine import ScriptedEngine
@@ -33,7 +34,7 @@ log = logging.getLogger("pramaan.orchestrator")
 
 TEMPERATURE = {"Formal": 0.35, "Neutral": 0.3, "Technical": 0.3, "Executive": 0.4, "Advisory": 0.35}
 SCRIPTED = ScriptedEngine()
-LIVE = None if config.DEMO_MODE else HFEngine()
+LIVE = None if config.DEMO_MODE else (GroqEngine() if config.LLM_PROVIDER == "groq" else HFEngine())
 
 T: dict[str, dict] = {}                 # transformation id -> state
 SOURCES: dict[str, list[Source]] = {}   # transformation id -> parsed sources (text, pages, pdf bytes)
@@ -490,6 +491,7 @@ async def _extract_evidence(t: dict) -> bool:
     tk["detail"] = "Verifying quotes against sources"
     tk["progress"] = 85
     claims, conflicts = ev.merge_sources(per_source)
+    ev.reconcile_modality(claims, SOURCES[t["id"]])
     t["claims"], t["source_conflicts"] = claims, conflicts
     primary = t["briefs"].get("S1") or next(iter(t["briefs"].values()))
     t["title"] = primary.get("title") or t["title"]

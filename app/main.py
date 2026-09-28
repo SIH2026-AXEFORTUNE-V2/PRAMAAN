@@ -144,8 +144,9 @@ def _deployment() -> dict:
     if config.MODEL_GATEWAY_URL:
         return {"mode": "on_prem", "label": "On-Prem", "detail": "All model calls go to the self-hosted gateway."}
     if orc.LIVE:
-        return {"mode": "hybrid", "label": "Hybrid", "detail": "App and data are local; model inference uses Hugging Face "
-                "Inference Providers. Credentials and injected instructions are withheld from model context."}
+        via = "GroqCloud" if config.LLM_PROVIDER == "groq" else "Hugging Face Inference Providers"
+        return {"mode": "hybrid", "label": "Hybrid", "detail": f"App and data stay on this server; model inference uses {via}. "
+                "Credentials and injected instructions are withheld from model context."}
     return {"mode": "offline", "label": "Offline", "detail": "No model gateway configured; offline extractive engine."}
 
 

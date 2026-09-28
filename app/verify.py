@@ -85,13 +85,14 @@ def verify_artifact(content: dict, claims: list[dict], corpus: str) -> dict:
             issues: list[dict] = []
             observed: dict[str, str] = {}
 
+            sentence_isos = {d["iso"] for d in dates}
             for d in dates:
                 exact = [c for c in date_claims if c["normalized"]["value"] == d["iso"]]
                 best = max(date_claims, key=lambda c: _affinity(skw, c), default=None)
                 best_aff = _affinity(skw, best) if best else 0
                 if exact:
                     target = max(exact, key=lambda c: _affinity(skw, c))
-                    if best and best is not target and best["normalized"]["value"] != d["iso"] \
+                    if best and best is not target and best["normalized"]["value"] not in sentence_isos \
                             and best_aff >= 2 and best_aff > _affinity(skw, target) + 1:
                         issues.append({"kind": "drift", "claim_id": best["claim_id"], "expected": best["display_value"],
                                        "found": d["surface"], "detail": f"States {d['surface']} for '{best['label']}'; evidence says {best['display_value']}."})
