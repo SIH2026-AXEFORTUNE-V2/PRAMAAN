@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: pramaan
+    runtime: docker
+    plan: starter            # a persistent disk needs a paid plan
+    healthCheckPath: /healthz
+    numInstances: 1          # live state is in memory; do not scale out
+    disk:
+      name: pramaan-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: HF_TOKEN
+        sync: false
+      - key: PRAMAAN_ACCESS_PASSWORD
+        sync: false

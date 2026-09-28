@@ -1,0 +1,212 @@
+{
+  "id": "threat_intel",
+  "label": "Threat intelligence bulletin",
+  "kind": "Threat Intelligence",
+  "text": "THREAT BULLETIN TB-2026-0917 | Regional Cyber Coordination Centre (fictional sample)\n\nRansomware group \"Ember Spider\" actively exploiting SecureGate VPN vulnerability CVE-2026-31742\n\nSummary\nSince 9 September 2026, the ransomware affiliate group tracked as Ember Spider has been exploiting a critical authentication-bypass vulnerability, CVE-2026-31742 (CVSS 9.8), in SecureGate VPN appliances running firmware versions 7.2.0 through 7.4.3. The flaw allows an unauthenticated attacker to obtain an administrative session by sending a crafted request to the /remote/saml/login endpoint. The vendor released fixed firmware 7.4.4 on 12 September 2026.\n\nObserved activity\nThe Centre has confirmed intrusions at 14 organisations across banking, healthcare and logistics in India and Southeast Asia. After gaining VPN access, the actors create a local administrator account, disable endpoint protection using a signed but vulnerable driver, and move laterally with RDP and PsExec. Data is staged and exfiltrated to cloud storage using Rclone before encryption begins. The median time from initial access to encryption has been 3.5 days, giving defenders a narrow but real window to detect and evict the intruders.\n\nRansom demands have ranged from USD 1.2 million to USD 4.5 million. Victims receive a note titled README_EMBER.txt and are threatened with publication of stolen data on a leak site within 7 days.\n\nExposure\nInternet scanning by the Centre identified approximately 41,000 SecureGate appliances exposed to the internet in the region. As of 25 September 2026, an estimated 38% of them still run a vulnerable firmware version.\n\nIndicators of compromise\n- Source IPs: 203.0.113.45, 198.51.100.23\n- Domain: update-securegate[.]net\n- File: svcupd.exe (SHA-256 begins 9f2c41ab)\n- Local account names created: sg_support, vpnadmin2\n\nRecommended actions\nOrganisations using SecureGate VPN should upgrade to firmware 7.4.4 immediately. Where patching is not possible within 24 hours, disable SAML login on the appliance. Review appliance logs since 1 September 2026 for requests to /remote/saml/login and for new local accounts. Reset credentials for all VPN and domain administrator accounts, enforce phishing-resistant MFA, and block the listed indicators. Report confirmed incidents to the Centre within 6 hours of detection.",
+  "brief": {
+    "title": "Ember Spider ransomware exploiting SecureGate VPN flaw CVE-2026-31742",
+    "source_type": "threat_intelligence",
+    "domain": "Cybersecurity",
+    "summary": "The ransomware group Ember Spider has been exploiting a critical authentication-bypass flaw (CVE-2026-31742, CVSS 9.8) in SecureGate VPN appliances since 9 September 2026. Fourteen organisations in banking, healthcare and logistics have been breached, and about 38% of roughly 41,000 exposed appliances remain unpatched. The vendor fix is firmware 7.4.4.",
+    "core_intent": "Warn organisations running SecureGate VPN to patch immediately, hunt for compromise and report incidents.",
+    "key_points": [
+      "CVE-2026-31742 lets unauthenticated attackers gain an admin session on SecureGate VPN 7.2.0 to 7.4.3.",
+      "Ember Spider has breached 14 organisations across banking, healthcare and logistics since 9 September 2026.",
+      "Attackers disable endpoint protection, move laterally and exfiltrate data with Rclone before encrypting.",
+      "Median time from initial access to encryption is 3.5 days, a narrow window for detection.",
+      "About 38% of roughly 41,000 exposed appliances still ran vulnerable firmware on 25 September 2026.",
+      "Fixed firmware 7.4.4 is available; disable SAML login if patching within 24 hours is not possible."
+    ],
+    "key_facts": [
+      {"label": "Vulnerability", "value": "CVE-2026-31742", "category": "TECHNICAL", "confidence": 0.99, "evidence": "critical authentication-bypass vulnerability, CVE-2026-31742 (CVSS 9.8)"},
+      {"label": "Severity score", "value": "CVSS 9.8", "category": "TECHNICAL", "confidence": 0.99, "evidence": "CVE-2026-31742 (CVSS 9.8)"},
+      {"label": "Organisations breached", "value": "14", "category": "IMPACT", "confidence": 0.98, "evidence": "confirmed intrusions at 14 organisations across banking, healthcare and logistics"},
+      {"label": "Exposed appliances", "value": "~41,000", "category": "EXPOSURE", "confidence": 0.95, "evidence": "approximately 41,000 SecureGate appliances exposed to the internet"},
+      {"label": "Still unpatched", "value": "38%", "category": "EXPOSURE", "confidence": 0.94, "evidence": "an estimated 38% of them still run a vulnerable firmware version"},
+      {"label": "Access to encryption", "value": "3.5 days", "category": "TIMELINE", "confidence": 0.96, "evidence": "median time from initial access to encryption has been 3.5 days"},
+      {"label": "Ransom demands", "value": "USD 1.2M - 4.5M", "category": "FINANCIAL", "confidence": 0.97, "evidence": "ranged from USD 1.2 million to USD 4.5 million"},
+      {"label": "Fixed firmware", "value": "7.4.4", "category": "REMEDIATION", "confidence": 0.99, "evidence": "The vendor released fixed firmware 7.4.4 on 12 September 2026"},
+      {"label": "Reporting deadline", "value": "6 hours", "category": "POLICY", "confidence": 0.92, "evidence": "Report confirmed incidents to the Centre within 6 hours of detection"}
+    ],
+    "entities": [
+      {"name": "Ember Spider", "type": "organization"},
+      {"name": "SecureGate VPN", "type": "product"},
+      {"name": "CVE-2026-31742", "type": "technology"},
+      {"name": "9 September 2026", "type": "date"},
+      {"name": "14 organisations", "type": "metric"},
+      {"name": "India and Southeast Asia", "type": "location"},
+      {"name": "Rclone", "type": "technology"},
+      {"name": "3.5 days", "type": "metric"},
+      {"name": "USD 4.5 million", "type": "metric"},
+      {"name": "41,000", "type": "metric"},
+      {"name": "38%", "type": "metric"},
+      {"name": "7.4.4", "type": "product"},
+      {"name": "Regional Cyber Coordination Centre", "type": "organization"}
+    ],
+    "sentiment": "negative",
+    "severity": "critical",
+    "recommended_audiences": ["Security operations (SOC)", "Senior executives / Board", "Technical practitioners"],
+    "information_gaps": [
+      "No named victims or sector breakdown by count.",
+      "No detection signatures (YARA / Sigma) supplied.",
+      "Full SHA-256 hash of svcupd.exe is truncated."
+    ],
+    "source_digest": "Threat bulletin TB-2026-0917 from the Regional Cyber Coordination Centre reports that the ransomware affiliate Ember Spider has exploited CVE-2026-31742 (CVSS 9.8), an authentication bypass in SecureGate VPN firmware 7.2.0-7.4.3 via /remote/saml/login, since 9 September 2026. Fixed firmware 7.4.4 was released 12 September 2026. 14 organisations in banking, healthcare and logistics in India and Southeast Asia are confirmed breached. Tradecraft: local admin creation, EDR disabled with a vulnerable signed driver, RDP/PsExec lateral movement, Rclone exfiltration, then encryption; median 3.5 days to encryption. Ransom USD 1.2-4.5 million, note README_EMBER.txt, leak threat within 7 days. About 41,000 appliances exposed; 38% unpatched as of 25 September 2026. IOCs: 203.0.113.45, 198.51.100.23, update-securegate[.]net, svcupd.exe (SHA-256 9f2c41ab...), accounts sg_support and vpnadmin2. Actions: patch to 7.4.4 now, disable SAML if not patchable in 24 hours, review logs since 1 September 2026, reset admin credentials, enforce phishing-resistant MFA, block IOCs, report within 6 hours.",
+    "confidence": 0.95
+  },
+  "outputs": {
+    "video": {
+      "title": "Patch Before Day Four: The Ember Spider VPN Campaign",
+      "logline": "A 60-second alert showing how one VPN flaw opened the door to 14 ransomware intrusions, and the three things every team must do today.",
+      "target_platform": "LinkedIn and internal security awareness channels",
+      "duration_seconds": 60,
+      "script": "SCENE 1 - The Open Door\nOne unpatched VPN appliance. That is all Ember Spider needs.\n\nSCENE 2 - The Flaw\nCVE-2026-31742 lets an attacker skip the login entirely and walk in as an administrator. It carries a severity score of 9.8 out of 10.\n\nSCENE 3 - The Campaign\nSince 9 September, 14 organisations in banking, healthcare and logistics have been breached. Data is stolen first, then encrypted, with ransom demands up to 4.5 million dollars.\n\nSCENE 4 - The Clock\nFrom first access to encryption takes a median of just 3.5 days. And 38 percent of exposed devices are still unpatched.\n\nSCENE 5 - What To Do Now\nUpgrade to firmware 7.4.4 today. Can't patch in 24 hours? Disable SAML login. Then hunt: check logs, reset admin credentials, block the indicators.\n\nSCENE 6 - Close\nReport confirmed incidents within 6 hours. Patch before day four.",
+      "scenes": [
+        {"scene_number": 1, "start_sec": 0, "end_sec": 7, "title": "The Open Door", "visual_description": "Dark server room; a single VPN appliance with a blinking amber light. A door-shaped outline of light opens on its front panel.", "on_screen_text": "One unpatched VPN.", "narration": "One unpatched VPN appliance. That is all Ember Spider needs.", "camera_direction": "Slow push-in to extreme close-up on the appliance LED", "visual_recommendation": "Stock data-centre footage with a 3D light-door overlay", "audio_cue": "Low sub-bass drone, single heartbeat hit"},
+        {"scene_number": 2, "start_sec": 7, "end_sec": 17, "title": "The Flaw", "visual_description": "Animated login screen; the username and password fields dissolve and an 'ADMIN' badge slides in. A severity gauge sweeps to 9.8.", "on_screen_text": "CVE-2026-31742 · CVSS 9.8", "narration": "CVE-2026-31742 lets an attacker skip the login entirely and walk in as an administrator. It carries a severity score of 9.8 out of 10.", "camera_direction": "Flat motion-graphic, centred", "visual_recommendation": "After Effects UI animation, red accent on the gauge", "audio_cue": "Glitch transition, rising synth"},
+        {"scene_number": 3, "start_sec": 17, "end_sec": 31, "title": "The Campaign", "visual_description": "Map of India and Southeast Asia; 14 red pins drop in sequence with sector icons (bank, hospital, truck). Files fly from pins into a cloud icon, then padlocks appear.", "on_screen_text": "14 organisations breached", "narration": "Since 9 September, 14 organisations in banking, healthcare and logistics have been breached. Data is stolen first, then encrypted, with ransom demands up to 4.5 million dollars.", "camera_direction": "Slow drift across the map from west to east", "visual_recommendation": "Animated map with sector pictograms; keep victims anonymous", "audio_cue": "Pulsing percussion, a click per pin"},
+        {"scene_number": 4, "start_sec": 31, "end_sec": 42, "title": "The Clock", "visual_description": "A large countdown timeline from Day 0 to Day 3.5 with stages: access, disable defences, move laterally, exfiltrate, encrypt. Then a donut chart fills to 38%.", "on_screen_text": "3.5 days · 38% still unpatched", "narration": "From first access to encryption takes a median of just 3.5 days. And 38 percent of exposed devices are still unpatched.", "camera_direction": "Horizontal track along the timeline", "visual_recommendation": "Kinetic timeline graphic; donut chart in amber", "audio_cue": "Ticking clock layered under the music"},
+        {"scene_number": 5, "start_sec": 42, "end_sec": 54, "title": "What To Do Now", "visual_description": "Three large checklist cards flip in: Patch to 7.4.4, Disable SAML if you can't patch in 24h, Hunt and reset. Each gets a green tick.", "on_screen_text": "Patch · Disable SAML · Hunt", "narration": "Upgrade to firmware 7.4.4 today. Can't patch in 24 hours? Disable SAML login. Then hunt: check logs, reset admin credentials, block the indicators.", "camera_direction": "Static, cards animate toward camera", "visual_recommendation": "Bold card UI on white; green ticks for completion", "audio_cue": "Music resolves to a confident major chord"},
+        {"scene_number": 6, "start_sec": 54, "end_sec": 60, "title": "Close", "visual_description": "Black end card with the bulletin reference and a 6-hour reporting reminder.", "on_screen_text": "Report within 6 hours · TB-2026-0917", "narration": "Report confirmed incidents within 6 hours. Patch before day four.", "camera_direction": "Hold", "visual_recommendation": "Brand end card, reference number in monospace", "audio_cue": "Single low hit, silence"}
+      ],
+      "visual_style": {"look_and_feel": "High-contrast editorial security briefing: black backgrounds, crisp white type, amber and red signal colours.", "color_palette": ["#0B0B0C", "#FFFFFF", "#E5484D", "#F5A524", "#16A34A"], "typography": "Inter ExtraBold for headlines, JetBrains Mono for CVE IDs and numbers", "music_direction": "Tense minimal electronic that resolves in the action scene"},
+      "call_to_action": "Patch SecureGate VPN to firmware 7.4.4 today and report any confirmed incident within 6 hours."
+    },
+    "linkedin": {
+      "hook": "3.5 days. That is the median time Ember Spider needs to go from your VPN login page to encrypted servers.",
+      "post": "3.5 days. That is the median time Ember Spider needs to go from your VPN login page to encrypted servers.\n\nSince 9 September 2026, this ransomware group has been exploiting CVE-2026-31742, a critical authentication bypass (CVSS 9.8) in SecureGate VPN firmware 7.2.0 to 7.4.3.\n\nWhat we know so far:\n→ 14 organisations breached across banking, healthcare and logistics\n→ Data is exfiltrated with Rclone before anything is encrypted\n→ Ransom demands of USD 1.2 million to USD 4.5 million\n→ Around 41,000 appliances are exposed, and 38% were still unpatched on 25 September\n\nThe fix exists. Firmware 7.4.4 was released on 12 September.\n\nIf you run SecureGate VPN, three things for today:\n1. Upgrade to 7.4.4. If you cannot within 24 hours, disable SAML login.\n2. Review logs since 1 September for requests to /remote/saml/login and new local admin accounts.\n3. Reset VPN and domain admin credentials and enforce phishing-resistant MFA.\n\nPatching is the cheapest incident response you will ever do.\n\nSecurity leaders: where does VPN firmware sit in your patch SLA today?",
+      "hashtags": ["#CyberSecurity", "#Ransomware", "#ThreatIntelligence", "#VulnerabilityManagement", "#CISO"],
+      "alternate_hooks": [
+        "38% of exposed SecureGate VPN appliances are still unpatched against a CVSS 9.8 flaw. Ember Spider has noticed.",
+        "14 organisations breached in under three weeks, all through the same VPN login page."
+      ],
+      "suggested_visual": "A single black card with '3.5 days' in large amber type and a thin timeline from access to encryption beneath it.",
+      "best_time_to_post": "Tuesday to Thursday, 8-10 AM IST, when security and IT leaders are reviewing the day's risks."
+    },
+    "twitter": {
+      "mode": "thread",
+      "tweets": [
+        {"text": "1/6 🚨 Ransomware group Ember Spider is exploiting CVE-2026-31742 (CVSS 9.8) in SecureGate VPN 7.2.0-7.4.3. Unauthenticated attackers get an admin session. 14 orgs breached since 9 Sep. 🧵"},
+        {"text": "2/6 Victims span banking, healthcare and logistics across India and Southeast Asia. Data is stolen with Rclone first, then encrypted. Ransom asks: USD 1.2M to 4.5M."},
+        {"text": "3/6 The clock is short: median time from initial access to encryption is 3.5 days. Detection in the first few days is everything."},
+        {"text": "4/6 Exposure is wide. ~41,000 SecureGate appliances are internet-facing in the region, and 38% were still on vulnerable firmware as of 25 Sep."},
+        {"text": "5/6 Do this now: upgrade to firmware 7.4.4. Can't patch within 24h? Disable SAML login. Check logs since 1 Sep for /remote/saml/login hits and new admin accounts (sg_support, vpnadmin2)."},
+        {"text": "6/6 Then reset VPN + domain admin creds, enforce phishing-resistant MFA and block update-securegate[.]net. Confirmed incident? Report within 6 hours. #Ransomware #CyberSecurity"}
+      ],
+      "alternates": [
+        "Patch SecureGate VPN to 7.4.4 today. CVE-2026-31742 (CVSS 9.8) is being used by Ember Spider ransomware, and 38% of exposed devices are still vulnerable. #Ransomware",
+        "Ember Spider goes from VPN login to encrypted servers in a median 3.5 days. If you run SecureGate 7.2.0-7.4.3, you are on the clock. Patch to 7.4.4."
+      ],
+      "hashtags": ["#Ransomware", "#CyberSecurity"],
+      "suggested_media": "Timeline graphic: Day 0 VPN access → Day 3.5 encryption, with the 7.4.4 patch marked as the exit."
+    },
+    "advisory": {
+      "advisory_id": "PRM-ADV-2026-0917",
+      "title": "Active exploitation of SecureGate VPN CVE-2026-31742 by Ember Spider ransomware",
+      "classification": "TLP:GREEN",
+      "severity": "critical",
+      "status": "Active - exploitation ongoing",
+      "summary": "Ember Spider, a ransomware affiliate group, is exploiting CVE-2026-31742 (CVSS 9.8), an authentication bypass in SecureGate VPN firmware 7.2.0 to 7.4.3, to gain administrative access. At least 14 organisations have been compromised since 9 September 2026. Fixed firmware 7.4.4 is available and must be applied immediately.",
+      "background": "SecureGate VPN appliances provide remote access for a large share of regional enterprises. A flaw in the SAML login endpoint (/remote/saml/login) lets a crafted request return an administrative session without credentials. The vendor released firmware 7.4.4 on 12 September 2026.",
+      "affected": [
+        "SecureGate VPN appliances on firmware 7.2.0 through 7.4.3",
+        "Banking, healthcare and logistics organisations in India and Southeast Asia (confirmed victims)",
+        "Any organisation with an internet-exposed SecureGate management or SAML endpoint"
+      ],
+      "impact": "Full administrative control of the VPN appliance, followed by domain-wide lateral movement, data theft and ransomware encryption within a median of 3.5 days. Stolen data is threatened with publication within 7 days, creating regulatory and reputational exposure in addition to operational downtime.",
+      "details": [
+        {"heading": "Exploitation", "body": "A crafted request to /remote/saml/login returns an administrative session without authentication. Exploitation has been observed since 9 September 2026."},
+        {"heading": "Post-exploitation tradecraft", "body": "Actors create local administrator accounts, disable endpoint protection using a signed but vulnerable driver, and move laterally with RDP and PsExec."},
+        {"heading": "Exfiltration and extortion", "body": "Data is staged and exfiltrated to cloud storage using Rclone before encryption. Ransom notes are named README_EMBER.txt; demands range from USD 1.2 million to USD 4.5 million."},
+        {"heading": "Exposure", "body": "Approximately 41,000 SecureGate appliances are internet-exposed in the region; an estimated 38% remained on vulnerable firmware as of 25 September 2026."}
+      ],
+      "recommendations": [
+        {"priority": "immediate", "action": "Upgrade all SecureGate VPN appliances to firmware 7.4.4.", "owner": "Network / infrastructure team"},
+        {"priority": "immediate", "action": "If patching within 24 hours is not possible, disable SAML login on the appliance.", "owner": "Network / infrastructure team"},
+        {"priority": "immediate", "action": "Block the listed IP addresses and domain at the perimeter and on DNS resolvers.", "owner": "Security operations (SOC)"},
+        {"priority": "short-term", "action": "Review appliance logs since 1 September 2026 for requests to /remote/saml/login and creation of local accounts.", "owner": "Security operations (SOC)"},
+        {"priority": "short-term", "action": "Reset credentials for all VPN and domain administrator accounts.", "owner": "Identity & access management"},
+        {"priority": "long-term", "action": "Enforce phishing-resistant MFA for remote access and privileged accounts.", "owner": "CISO office"},
+        {"priority": "immediate", "action": "Report confirmed incidents to the Centre within 6 hours of detection.", "owner": "Incident response lead"}
+      ],
+      "indicators": [
+        {"type": "IPv4", "value": "203.0.113.45"},
+        {"type": "IPv4", "value": "198.51.100.23"},
+        {"type": "Domain", "value": "update-securegate[.]net"},
+        {"type": "File", "value": "svcupd.exe (SHA-256 begins 9f2c41ab)"},
+        {"type": "Account", "value": "sg_support"},
+        {"type": "Account", "value": "vpnadmin2"},
+        {"type": "Ransom note", "value": "README_EMBER.txt"}
+      ],
+      "references": ["Threat Bulletin TB-2026-0917, Regional Cyber Coordination Centre"],
+      "contact": "Regional Cyber Coordination Centre incident desk"
+    },
+    "infographic": {
+      "title": "Ember Spider: 3.5 Days to Ransom",
+      "subtitle": "How a single VPN flaw became a regional ransomware campaign, and how to close it.",
+      "headline_stat": {"value": "38%", "label": "of ~41,000 exposed SecureGate VPNs still unpatched"},
+      "sections": [
+        {"heading": "The Flaw", "icon": "lock", "stat_value": "9.8", "stat_label": "CVSS score", "text": "CVE-2026-31742 hands attackers an admin session on SecureGate VPN 7.2.0 to 7.4.3, no password needed."},
+        {"heading": "The Victims", "icon": "users", "stat_value": "14", "stat_label": "organisations breached", "text": "Banking, healthcare and logistics firms across India and Southeast Asia since 9 September 2026."},
+        {"heading": "The Clock", "icon": "clock", "stat_value": "3.5 days", "stat_label": "access to encryption", "text": "Actors disable defences, move laterally and steal data with Rclone before encrypting."},
+        {"heading": "The Price", "icon": "money", "stat_value": "$4.5M", "stat_label": "top ransom demand", "text": "Demands range from USD 1.2 million to USD 4.5 million, with leak threats inside 7 days."}
+      ],
+      "chart": {"chart_type": "bar", "title": "Ransom demand range (USD million)", "unit": "M", "data": [{"label": "Lowest demand", "value": 1.2}, {"label": "Highest demand", "value": 4.5}]},
+      "key_messages": [
+        "Upgrade to firmware 7.4.4 today.",
+        "Can't patch in 24 hours? Disable SAML login.",
+        "Hunt for sg_support and vpnadmin2 accounts and reset admin credentials."
+      ],
+      "layout": {"type": "vertical_flow", "rationale": "A top-down story (flaw, victims, clock, price, action) mirrors the attack chain and ends on what readers must do.", "color_palette": ["#0B0B0C", "#E5484D", "#F5A524", "#16A34A"], "typography": "Source Serif headline, Inter body, JetBrains Mono for CVE and figures", "visual_hierarchy": ["Headline stat: 38% unpatched", "Four attack-chain cards", "Ransom range chart", "Action checklist on black"]},
+      "call_to_action": "Patch to 7.4.4. Report incidents within 6 hours.",
+      "source_note": "Source: Threat Bulletin TB-2026-0917, Regional Cyber Coordination Centre (fictional sample)"
+    },
+    "executive_summary": {
+      "title": "Executive Briefing: Ember Spider ransomware campaign via SecureGate VPN",
+      "bottom_line": "A critical, actively exploited VPN flaw has led to 14 ransomware breaches in three weeks; any SecureGate appliance not on firmware 7.4.4 should be treated as a live incident risk today.",
+      "situation": "Since 9 September 2026 the Ember Spider group has exploited CVE-2026-31742 (CVSS 9.8) to take administrative control of SecureGate VPN appliances without credentials. Victims in banking, healthcare and logistics have had data stolen and systems encrypted, with ransom demands of USD 1.2 million to USD 4.5 million.",
+      "key_findings": [
+        "The flaw affects SecureGate VPN firmware 7.2.0 through 7.4.3; version 7.4.4 fixes it.",
+        "14 organisations in India and Southeast Asia are confirmed compromised.",
+        "Attackers reach encryption in a median of 3.5 days, after stealing data first.",
+        "About 38% of roughly 41,000 exposed appliances remained unpatched on 25 September 2026."
+      ],
+      "implications": [
+        "If we run an unpatched appliance, we should assume compromise is possible and verify, not just patch.",
+        "Data theft before encryption means regulatory notification and reputational exposure even if backups are intact.",
+        "The 6-hour reporting expectation requires incident response to be on standby."
+      ],
+      "metrics": [
+        {"label": "CVSS", "value": "9.8"},
+        {"label": "Organisations breached", "value": "14"},
+        {"label": "Median time to encryption", "value": "3.5 days"},
+        {"label": "Exposed devices unpatched", "value": "38%"}
+      ],
+      "recommended_actions": [
+        {"action": "Confirm SecureGate inventory and upgrade every appliance to firmware 7.4.4.", "owner": "CIO / Head of Infrastructure", "timeline": "Within 24 hours"},
+        {"action": "Disable SAML login on any appliance that cannot be patched immediately.", "owner": "Head of Infrastructure", "timeline": "Within 24 hours"},
+        {"action": "Run a compromise assessment on logs since 1 September 2026 and reset admin credentials.", "owner": "CISO", "timeline": "This week"},
+        {"action": "Mandate phishing-resistant MFA for remote and privileged access.", "owner": "CISO", "timeline": "This quarter"}
+      ],
+      "risks": [
+        "Patching alone does not evict an attacker who already has access.",
+        "Leak-site publication within 7 days of an incident could trigger customer and regulator scrutiny."
+      ],
+      "decision_required": "Approve an emergency change window today for VPN firmware upgrades and authorise a compromise assessment."
+    },
+    "presentation": {
+      "title": "Ember Spider & CVE-2026-31742",
+      "subtitle": "Threat briefing for leadership and security teams",
+      "slides": [
+        {"layout": "title", "title": "Ember Spider & CVE-2026-31742", "bullets": [], "right_bullets": [], "stat_value": "", "stat_label": "", "quote": "", "visual_suggestion": "Dark cover with a faint VPN appliance silhouette", "speaker_notes": "Good morning. This briefing covers an active ransomware campaign exploiting a critical flaw in SecureGate VPN appliances. I will cover what is happening, how exposed we are as a region, and the three decisions we need today. Everything I present comes from Threat Bulletin TB-2026-0917 issued by the Regional Cyber Coordination Centre."},
+        {"layout": "bullets", "title": "What is happening", "bullets": ["Ember Spider exploiting CVE-2026-31742 since 9 September 2026", "Authentication bypass: admin session without credentials", "Affects SecureGate VPN firmware 7.2.0 to 7.4.3", "Fixed firmware 7.4.4 released 12 September 2026"], "right_bullets": [], "stat_value": "", "stat_label": "", "quote": "", "visual_suggestion": "Simple diagram: attacker → /remote/saml/login → admin session", "speaker_notes": "The core problem is simple. A crafted request to the SAML login page gives an attacker an administrative session without any password. Ember Spider started using this on 9 September. The vendor shipped a fix three days later in firmware 7.4.4, so this is a patching race, not a zero-day with no answer."},
+        {"layout": "big_stat", "title": "Organisations already breached", "bullets": [], "right_bullets": [], "stat_value": "14", "stat_label": "across banking, healthcare and logistics in India and Southeast Asia", "quote": "", "visual_suggestion": "Map with anonymised pins", "speaker_notes": "Fourteen organisations are confirmed compromised so far. They are in banking, healthcare and logistics, sectors where downtime and data exposure are both very costly. We should expect this number to grow while so many appliances remain unpatched."},
+        {"layout": "two_column", "title": "Attack chain and exposure", "bullets": ["Create local admin accounts", "Disable EDR with a vulnerable signed driver", "Move laterally via RDP and PsExec", "Exfiltrate with Rclone, then encrypt"], "right_bullets": ["~41,000 appliances internet-exposed", "38% unpatched as of 25 September 2026", "Median 3.5 days to encryption", "Ransom: USD 1.2M to 4.5M"], "stat_value": "", "stat_label": "", "quote": "", "visual_suggestion": "Left: attack chain arrows. Right: exposure numbers", "speaker_notes": "On the left is the attack chain. After getting in, they create admin accounts, switch off endpoint protection and spread across the network before stealing data and encrypting. On the right is why this matters: tens of thousands of devices are exposed and more than a third were still vulnerable last week. Our window to detect an intrusion is roughly three and a half days."},
+        {"layout": "bullets", "title": "Actions for today", "bullets": ["Upgrade every SecureGate appliance to 7.4.4", "Cannot patch in 24h: disable SAML login", "Hunt logs since 1 Sep for /remote/saml/login", "Reset VPN and domain admin credentials", "Block listed IPs, domain and accounts"], "right_bullets": [], "stat_value": "", "stat_label": "", "quote": "", "visual_suggestion": "Checklist with owners", "speaker_notes": "These are the actions the bulletin asks for. Patch first. If a device cannot be patched within a day, turn off SAML login as a stop-gap. Then assume we might already have been touched: review logs, look for the two known account names, reset admin passwords and block the indicators. The SOC has the indicator list."},
+        {"layout": "quote", "title": "Reporting obligation", "bullets": [], "right_bullets": [], "stat_value": "", "stat_label": "", "quote": "Report confirmed incidents to the Centre within 6 hours of detection.", "visual_suggestion": "", "speaker_notes": "One more requirement to be aware of: confirmed incidents must be reported to the Centre within six hours. That means our incident response lead needs to be on standby and the escalation path must be clear before anything happens, not after."},
+        {"layout": "bullets", "title": "Longer-term hardening", "bullets": ["Phishing-resistant MFA for remote and privileged access", "VPN firmware inside a critical-patch SLA of days, not weeks", "Continuous monitoring of edge appliance logs"], "right_bullets": [], "stat_value": "", "stat_label": "", "quote": "", "visual_suggestion": "Roadmap strip: now, next month, next quarter", "speaker_notes": "Beyond this incident, the lesson is that edge devices like VPNs are a favourite entry point. Phishing-resistant MFA is directly recommended in the bulletin. The other two items are my recommendations to make sure the next critical VPN flaw gets patched in hours, not weeks."},
+        {"layout": "closing", "title": "Decisions needed today", "bullets": ["Approve emergency firmware change window", "Authorise a compromise assessment", "Confirm incident response on standby"], "right_bullets": [], "stat_value": "", "stat_label": "", "quote": "", "visual_suggestion": "", "speaker_notes": "To close, I need three decisions: an emergency change window for the firmware upgrade, approval for a compromise assessment on our appliances, and confirmation that incident response is on standby for the six-hour reporting window. Happy to take questions."}
+      ]
+    }
+  }
+}

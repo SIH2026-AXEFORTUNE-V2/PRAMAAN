@@ -1,0 +1,248 @@
+@import "tailwindcss";
+@import "@fontsource/atkinson-hyperlegible-next/400.css";
+@import "@fontsource/atkinson-hyperlegible-next/500.css";
+@import "@fontsource/atkinson-hyperlegible-next/600.css";
+@import "@fontsource/atkinson-hyperlegible-next/700.css";
+@import "@fontsource/atkinson-hyperlegible-next/400-italic.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/600.css";
+@import "@fontsource/jetbrains-mono/700.css";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ------------------------------------------------------------------ */
+/* Tokens: "ink & archive". Paper-grey desk, ink text, seal-blue      */
+/* accent. Highlighter yellow is reserved for evidence only.          */
+/* ------------------------------------------------------------------ */
+:root {
+  color-scheme: light;
+  --bg: #eceff3;
+  --surface: #ffffff;
+  --surface-2: #f6f7f9;
+  --surface-3: #e9ecf1;
+  --border: #dde1e8;
+  --border-strong: #c3c9d4;
+  --fg: #172033;
+  --fg-muted: #4a5568;
+  --fg-subtle: #6f7a8c;
+  --accent: #2e4fa3;
+  --accent-hover: #243f86;
+  --accent-fg: #ffffff;
+  --accent-soft: #e8edf8;
+  --accent-line: #bccaec;
+  --success: #1d7348;
+  --success-soft: #e6f3ec;
+  --success-line: #a9d4bc;
+  --warning: #8f5a00;
+  --warning-soft: #fbf1dc;
+  --warning-line: #ecd198;
+  --danger: #b3261e;
+  --danger-soft: #fbeae8;
+  --danger-line: #efbdb8;
+  --mark: #f2d24b;
+  --mark-soft: rgb(242 210 75 / 0.42);
+  --paper: #ffffff;
+  --paper-ink: #172033;
+  --shadow-sm: 0 1px 2px rgb(23 32 51 / 0.06);
+  --shadow-md: 0 1px 2px rgb(23 32 51 / 0.05), 0 6px 18px -8px rgb(23 32 51 / 0.18);
+  --shadow-lg: 0 24px 48px -16px rgb(23 32 51 / 0.28);
+  --overlay: rgb(23 32 51 / 0.34);
+  --highlight: rgb(46 79 163 / 0.1);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1422;
+  --surface: #141c2d;
+  --surface-2: #182135;
+  --surface-3: #1f2a40;
+  --border: #26324a;
+  --border-strong: #35435f;
+  --fg: #e6eaf2;
+  --fg-muted: #aab4c6;
+  --fg-subtle: #8290a8;
+  --accent: #8ea8f2;
+  --accent-hover: #a9bdf6;
+  --accent-fg: #0e1422;
+  --accent-soft: rgb(142 168 242 / 0.13);
+  --accent-line: rgb(142 168 242 / 0.34);
+  --success: #5cc795;
+  --success-soft: rgb(92 199 149 / 0.12);
+  --success-line: rgb(92 199 149 / 0.34);
+  --warning: #e8b45a;
+  --warning-soft: rgb(232 180 90 / 0.12);
+  --warning-line: rgb(232 180 90 / 0.34);
+  --danger: #f08a80;
+  --danger-soft: rgb(240 138 128 / 0.12);
+  --danger-line: rgb(240 138 128 / 0.36);
+  --mark: #f2d24b;
+  --mark-soft: rgb(242 210 75 / 0.26);
+  --paper: #f7f8fa;
+  --paper-ink: #172033;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-md: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 20px -8px rgb(0 0 0 / 0.55);
+  --shadow-lg: 0 28px 56px -16px rgb(0 0 0 / 0.7);
+  --overlay: rgb(5 9 18 / 0.6);
+  --highlight: rgb(142 168 242 / 0.16);
+}
+
+@theme inline {
+  --font-sans: "Atkinson Hyperlegible Next", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: "JetBrains Mono", ui-monospace, monospace;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-subtle: var(--fg-subtle);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-line: var(--success-line);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-line: var(--warning-line);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-line: var(--danger-line);
+  --color-mark: var(--mark);
+  --color-mark-soft: var(--mark-soft);
+  --color-paper: var(--paper);
+  --color-paper-ink: var(--paper-ink);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  /* Type scale (1.125 ratio from 15px). Nothing in the UI is set below 12px. */
+  --text-2xs: 0.75rem;
+  --text-2xs--line-height: 1.45;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.9063rem;
+  --text-sm--line-height: 1.55;
+  --text-base: 0.9688rem;
+  --text-base--line-height: 1.6;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.4;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.3;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 1.2;
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                               */
+/* ------------------------------------------------------------------ */
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+.font-display {
+  letter-spacing: -0.02em;
+}
+code,
+.font-mono {
+  font-feature-settings: "zero" 1;
+}
+::selection {
+  background: var(--highlight);
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+button,
+[role="button"] {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion (short, purposeful; disabled for reduced motion)            */
+/* ------------------------------------------------------------------ */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes slide-in-right {
+  from { transform: translateX(16px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+.animate-fade-in { animation: fade-in 180ms ease-out both; }
+.animate-slide-in { animation: slide-in-right 200ms ease-out both; }
+.animate-pulse-soft { animation: pulse-soft 1.6s ease-in-out infinite; }
+.bar-indeterminate { animation: indeterminate 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+/* Evidence marks: an analyst's highlighter on a printed report. */
+.claim {
+  cursor: pointer;
+  border-radius: 2px;
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-color 120ms, text-decoration-color 120ms;
+}
+.claim-grounded { text-decoration-color: var(--success-line); }
+.claim-review { text-decoration-color: var(--warning); text-decoration-style: dashed; }
+.claim-bad { text-decoration-color: var(--danger); text-decoration-style: wavy; background: var(--danger-soft); }
+.claim:hover,
+.claim[aria-pressed="true"] {
+  background: var(--mark-soft);
+  text-decoration-color: transparent;
+}
+.claim-bad:hover,
+.claim-bad[aria-pressed="true"] { background: var(--danger-soft); text-decoration-color: var(--danger); }
+.sec-mark { border-radius: 2px; padding: 0 2px; background: var(--warning-soft); box-shadow: inset 0 -2px 0 var(--warning-line); }
+.sec-mark-block { background: var(--danger-soft); box-shadow: inset 0 -2px 0 var(--danger-line); }
+.mark-swipe {
+  background: rgb(242 210 75 / 0.55);
+  mix-blend-mode: multiply;
+  border-radius: 3px 6px 4px 7px;
+}

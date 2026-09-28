@@ -1,0 +1,183 @@
+{
+  "id": "earnings",
+  "label": "Quarterly results announcement",
+  "kind": "Announcement",
+  "text": "PRESS RELEASE | Acme Dynamics Ltd (fictional sample)\nMumbai, 26 September 2026\n\nAcme Dynamics reports Q2 FY27 results: revenue up 18%, EBITDA margin at 19.1%, net debt cut by Rs 310 crore\n\nAcme Dynamics Ltd, a manufacturer of industrial automation systems, today announced results for the quarter ended 30 September 2026.\n\nConsolidated revenue rose 18% year on year to Rs 4,320 crore, driven by strong demand for robotic assembly lines from electric-vehicle makers. EBITDA grew to Rs 825 crore, with the EBITDA margin improving to 19.1% from 17.4% a year earlier despite higher steel prices. Profit after tax was Rs 412 crore, up 22%.\n\nThe order book stood at a record Rs 11,600 crore, of which 42% comes from export customers in Europe and Southeast Asia. The company reduced net debt by Rs 310 crore during the quarter to Rs 1,050 crore, bringing net debt to EBITDA down to 0.9x.\n\nWorking capital days increased from 62 to 71 as the company built inventory for large EV-line contracts due for delivery in the second half. Management expects working capital to normalise by the end of the financial year.\n\n\"This quarter shows that our shift toward electric-vehicle automation is paying off,\" said Rohan Khanna, Managing Director and CEO. \"We remain committed to our debt reduction targets and expect to be net-debt free by FY29.\"\n\nThe board approved an interim dividend of Rs 6 per share and capital expenditure of Rs 450 crore for a new robotics plant in Pune, expected to begin production in Q1 FY28.\n\nOutlook: The company reiterated full-year revenue growth guidance of 15-17% and an EBITDA margin of 18.5-19.5%. Key risks include steel price volatility and delays in customer EV programmes.",
+  "brief": {
+    "title": "Acme Dynamics Q2 FY27: 18% revenue growth, record order book, lower debt",
+    "source_type": "announcement",
+    "domain": "Finance / Industrial manufacturing",
+    "summary": "Acme Dynamics grew Q2 FY27 revenue 18% to Rs 4,320 crore on EV-automation demand, lifted EBITDA margin to 19.1% and cut net debt by Rs 310 crore. The order book hit a record Rs 11,600 crore, while working capital days rose to 71 ahead of large second-half deliveries.",
+    "core_intent": "Communicate strong quarterly performance and reassure stakeholders on debt reduction and outlook.",
+    "key_points": [
+      "Revenue up 18% year on year to Rs 4,320 crore, led by EV assembly-line demand.",
+      "EBITDA of Rs 825 crore; margin improved to 19.1% from 17.4%.",
+      "Profit after tax of Rs 412 crore, up 22%.",
+      "Record order book of Rs 11,600 crore, 42% from exports.",
+      "Net debt reduced by Rs 310 crore to Rs 1,050 crore; net debt to EBITDA at 0.9x.",
+      "Working capital days rose from 62 to 71 due to inventory build for EV contracts.",
+      "Guidance reiterated: 15-17% revenue growth and 18.5-19.5% EBITDA margin."
+    ],
+    "key_facts": [
+      {"label": "Revenue", "value": "Rs 4,320 crore", "category": "INCOME STATEMENT", "confidence": 0.99, "evidence": "Consolidated revenue rose 18% year on year to Rs 4,320 crore"},
+      {"label": "Revenue growth", "value": "18%", "category": "INCOME STATEMENT", "confidence": 0.99, "evidence": "Consolidated revenue rose 18% year on year"},
+      {"label": "EBITDA", "value": "Rs 825 crore", "category": "INCOME STATEMENT", "confidence": 0.98, "evidence": "EBITDA grew to Rs 825 crore"},
+      {"label": "EBITDA margin", "value": "19.1%", "category": "INCOME STATEMENT", "confidence": 0.98, "evidence": "EBITDA margin improving to 19.1% from 17.4% a year earlier"},
+      {"label": "PAT", "value": "Rs 412 crore", "category": "INCOME STATEMENT", "confidence": 0.97, "evidence": "Profit after tax was Rs 412 crore, up 22%"},
+      {"label": "Order book", "value": "Rs 11,600 crore", "category": "PIPELINE", "confidence": 0.97, "evidence": "The order book stood at a record Rs 11,600 crore"},
+      {"label": "Net debt", "value": "Rs 1,050 crore", "category": "BALANCE SHEET", "confidence": 0.96, "evidence": "reduced net debt by Rs 310 crore during the quarter to Rs 1,050 crore"},
+      {"label": "Net debt / EBITDA", "value": "0.9x", "category": "BALANCE SHEET", "confidence": 0.95, "evidence": "bringing net debt to EBITDA down to 0.9x"},
+      {"label": "Working capital days", "value": "71", "category": "BALANCE SHEET", "confidence": 0.9, "evidence": "Working capital days increased from 62 to 71"},
+      {"label": "Interim dividend", "value": "Rs 6 per share", "category": "SHAREHOLDER", "confidence": 0.97, "evidence": "interim dividend of Rs 6 per share"}
+    ],
+    "entities": [
+      {"name": "Acme Dynamics", "type": "organization"},
+      {"name": "Rohan Khanna", "type": "person"},
+      {"name": "Rs 4,320 crore", "type": "metric"},
+      {"name": "19.1%", "type": "metric"},
+      {"name": "Rs 11,600 crore", "type": "metric"},
+      {"name": "Rs 310 crore", "type": "metric"},
+      {"name": "electric-vehicle", "type": "technology"},
+      {"name": "Pune", "type": "location"},
+      {"name": "Europe and Southeast Asia", "type": "location"},
+      {"name": "30 September 2026", "type": "date"},
+      {"name": "FY29", "type": "date"}
+    ],
+    "sentiment": "positive",
+    "severity": "informational",
+    "recommended_audiences": ["Investors & analysts", "Media & press", "Employees (internal)"],
+    "information_gaps": ["No segment-wise revenue split.", "No free cash flow figure.", "Pune plant capacity not stated."],
+    "source_digest": "Acme Dynamics (industrial automation) Q2 FY27, quarter ended 30 September 2026: revenue Rs 4,320 crore (+18% YoY) on EV robotic assembly-line demand; EBITDA Rs 825 crore, margin 19.1% vs 17.4%; PAT Rs 412 crore (+22%). Record order book Rs 11,600 crore, 42% exports (Europe, Southeast Asia). Net debt down Rs 310 crore to Rs 1,050 crore; net debt/EBITDA 0.9x. Working capital days 62 to 71 from inventory build for H2 EV deliveries, expected to normalise by year end. CEO Rohan Khanna: EV shift paying off, net-debt free by FY29. Interim dividend Rs 6/share; capex Rs 450 crore for Pune robotics plant, production from Q1 FY28. Guidance: revenue growth 15-17%, EBITDA margin 18.5-19.5%. Risks: steel prices, customer EV programme delays.",
+    "confidence": 0.94
+  },
+  "outputs": {
+    "video": {
+      "title": "Acme Dynamics Q2 FY27 in 60 Seconds",
+      "logline": "A crisp results explainer: how EV automation drove 18% growth, record orders and lower debt.",
+      "target_platform": "LinkedIn, YouTube and investor-relations website",
+      "duration_seconds": 60,
+      "script": "SCENE 1 - The Quarter\nAcme Dynamics just posted its second quarter of FY27. Here is what matters.\n\nSCENE 2 - Growth\nRevenue grew 18 percent to 4,320 crore rupees, powered by robotic assembly lines for electric-vehicle makers.\n\nSCENE 3 - Profitability\nEBITDA margin rose to 19.1 percent, and profit after tax climbed 22 percent to 412 crore.\n\nSCENE 4 - Pipeline and Balance Sheet\nThe order book hit a record 11,600 crore. Net debt fell by 310 crore, to just 0.9 times EBITDA.\n\nSCENE 5 - What's Next\nA new robotics plant in Pune, an interim dividend of 6 rupees a share, and guidance of 15 to 17 percent growth.\n\nSCENE 6 - Close\nAcme Dynamics. Automating the electric future.",
+      "scenes": [
+        {"scene_number": 1, "start_sec": 0, "end_sec": 6, "title": "The Quarter", "visual_description": "Robotic arms welding an EV chassis in slow motion, sparks glowing against a dark factory.", "on_screen_text": "Q2 FY27 Results", "narration": "Acme Dynamics just posted its second quarter of FY27. Here is what matters.", "camera_direction": "Slow dolly along the assembly line", "visual_recommendation": "Company factory B-roll or licensed EV manufacturing stock", "audio_cue": "Upbeat corporate electronic intro"},
+        {"scene_number": 2, "start_sec": 6, "end_sec": 17, "title": "Growth", "visual_description": "Animated bar rising with a counter ticking to ₹4,320 Cr, an 18% badge popping in.", "on_screen_text": "Revenue ₹4,320 Cr · +18%", "narration": "Revenue grew 18 percent to 4,320 crore rupees, powered by robotic assembly lines for electric-vehicle makers.", "camera_direction": "Motion graphic, centred", "visual_recommendation": "Clean white chart card, black bar, green growth badge", "audio_cue": "Riser into beat"},
+        {"scene_number": 3, "start_sec": 17, "end_sec": 29, "title": "Profitability", "visual_description": "Two stat cards side by side: margin gauge moving from 17.4% to 19.1%, PAT card showing ₹412 Cr +22%.", "on_screen_text": "Margin 19.1% · PAT ₹412 Cr", "narration": "EBITDA margin rose to 19.1 percent, and profit after tax climbed 22 percent to 412 crore.", "camera_direction": "Split screen, cards slide in", "visual_recommendation": "Gauge animation in amber, PAT in black", "audio_cue": "Steady beat"},
+        {"scene_number": 4, "start_sec": 29, "end_sec": 42, "title": "Pipeline and Balance Sheet", "visual_description": "A stack of order documents grows into ₹11,600 Cr; a debt bar shrinks by ₹310 Cr with a 0.9x label.", "on_screen_text": "Order book ₹11,600 Cr · Net debt 0.9x", "narration": "The order book hit a record 11,600 crore. Net debt fell by 310 crore, to just 0.9 times EBITDA.", "camera_direction": "Vertical pan from order stack to debt bar", "visual_recommendation": "Isometric document stack; shrinking red bar", "audio_cue": "Soft whoosh on the debt drop"},
+        {"scene_number": 5, "start_sec": 42, "end_sec": 54, "title": "What's Next", "visual_description": "Map pin on Pune with a plant rendering, a dividend coin icon, and a guidance range bar of 15-17%.", "on_screen_text": "Pune plant · ₹6 dividend · 15-17% guidance", "narration": "A new robotics plant in Pune, an interim dividend of 6 rupees a share, and guidance of 15 to 17 percent growth.", "camera_direction": "Three quick cuts", "visual_recommendation": "Architectural render placeholder for the Pune plant", "audio_cue": "Build to final chord"},
+        {"scene_number": 6, "start_sec": 54, "end_sec": 60, "title": "Close", "visual_description": "Black end card with Acme Dynamics wordmark.", "on_screen_text": "Automating the electric future", "narration": "Acme Dynamics. Automating the electric future.", "camera_direction": "Hold", "visual_recommendation": "Logo end card", "audio_cue": "Final hit"}
+      ],
+      "visual_style": {"look_and_feel": "Confident fintech-dashboard aesthetic: white data cards on black, bold numerals.", "color_palette": ["#0B0B0C", "#FFFFFF", "#16A34A", "#F5A524", "#2563EB"], "typography": "Inter ExtraBold numerals, Source Serif for headlines", "music_direction": "Optimistic, mid-tempo corporate electronic"},
+      "call_to_action": "Read the full Q2 FY27 results on the investor relations page."
+    },
+    "linkedin": {
+      "hook": "18% revenue growth, a record order book and ₹310 crore less debt. Here's our Q2 FY27 in five numbers.",
+      "post": "18% revenue growth, a record order book and ₹310 crore less debt. Here's our Q2 FY27 in five numbers.\n\n📈 ₹4,320 crore revenue, up 18% year on year\n⚙️ 19.1% EBITDA margin, up from 17.4% despite higher steel prices\n💰 ₹412 crore profit after tax, up 22%\n📦 ₹11,600 crore order book, a record, with 42% from exports\n🏦 Net debt down to ₹1,050 crore, just 0.9x EBITDA\n\nThe story behind the numbers is electric vehicles. EV makers are automating faster than ever, and our robotic assembly lines are right at the centre of that shift.\n\nWe're also investing ahead of demand, with ₹450 crore committed to a new robotics plant in Pune, expected to start production in Q1 FY28.\n\n\"This quarter shows that our shift toward electric-vehicle automation is paying off,\" said Rohan Khanna, our Managing Director and CEO. \"We remain committed to our debt reduction targets and expect to be net-debt free by FY29.\"\n\nThank you to our teams, customers and partners who made this quarter possible.",
+      "hashtags": ["#Q2FY27", "#Earnings", "#Automation", "#ElectricVehicles", "#Manufacturing"],
+      "alternate_hooks": [
+        "Our order book just crossed ₹11,600 crore, a record. Here's what's driving it.",
+        "EV automation is paying off: Q2 FY27 revenue up 18%, margins up, debt down."
+      ],
+      "suggested_visual": "A five-tile carousel, one number per slide, in black and white with a green accent.",
+      "best_time_to_post": "Results day, 9-11 AM IST, shortly after the exchange filing."
+    },
+    "twitter": {
+      "mode": "thread",
+      "tweets": [
+        {"text": "1/5 Acme Dynamics Q2 FY27 results are out. Revenue +18% to ₹4,320 Cr, EBITDA margin up to 19.1%, net debt down ₹310 Cr. Thread 🧵"},
+        {"text": "2/5 The driver: electric vehicles. EV makers are buying our robotic assembly lines, pushing the order book to a record ₹11,600 Cr, with 42% from exports."},
+        {"text": "3/5 Profit after tax rose 22% to ₹412 Cr. Margin expanded from 17.4% to 19.1% even as steel prices climbed."},
+        {"text": "4/5 Balance sheet keeps getting stronger: net debt ₹1,050 Cr, 0.9x EBITDA. Target: net-debt free by FY29. Interim dividend of ₹6/share approved."},
+        {"text": "5/5 Next up: a ₹450 Cr robotics plant in Pune, producing from Q1 FY28. FY27 guidance reiterated at 15-17% revenue growth. #Earnings #EV"}
+      ],
+      "alternates": [
+        "Q2 FY27: revenue +18% to ₹4,320 Cr, margin 19.1%, record ₹11,600 Cr order book, net debt down ₹310 Cr. EV automation is paying off. #Earnings",
+        "Record order book. Wider margins. Lower debt. Acme Dynamics Q2 FY27 in one line: EV automation is working."
+      ],
+      "hashtags": ["#Earnings", "#EV"],
+      "suggested_media": "Four-number results card: revenue, margin, order book, net debt."
+    },
+    "advisory": {
+      "advisory_id": "PRM-ADV-2026-0926",
+      "title": "Investor advisory: Acme Dynamics Q2 FY27 results and watch-points",
+      "classification": "PUBLIC",
+      "severity": "informational",
+      "status": "For information",
+      "summary": "Acme Dynamics reported strong Q2 FY27 results with 18% revenue growth, a 19.1% EBITDA margin and a Rs 310 crore reduction in net debt. Working capital days rose to 71, which investors should monitor into the second half.",
+      "background": "Acme Dynamics manufactures industrial automation systems and has shifted its mix toward robotic assembly lines for electric-vehicle makers.",
+      "affected": ["Equity investors and analysts covering Acme Dynamics", "Lenders and credit analysts", "EV-sector supply-chain partners"],
+      "impact": "Results strengthen the growth and deleveraging narrative. The rise in working capital and exposure to steel prices and EV programme timing are the main swing factors for H2 FY27.",
+      "details": [
+        {"heading": "Performance", "body": "Revenue Rs 4,320 crore (+18%), EBITDA Rs 825 crore, margin 19.1% (vs 17.4%), PAT Rs 412 crore (+22%)."},
+        {"heading": "Balance sheet", "body": "Net debt reduced by Rs 310 crore to Rs 1,050 crore; net debt to EBITDA 0.9x. Management targets net-debt free by FY29."},
+        {"heading": "Working capital", "body": "Working capital days increased from 62 to 71 on inventory build for large EV-line contracts; expected to normalise by year end."},
+        {"heading": "Capital allocation", "body": "Interim dividend of Rs 6 per share; capex of Rs 450 crore for a Pune robotics plant starting production in Q1 FY28."}
+      ],
+      "recommendations": [
+        {"priority": "short-term", "action": "Track working capital days in Q3 against management's normalisation commitment.", "owner": "Equity / credit analyst"},
+        {"priority": "short-term", "action": "Monitor steel price trends for margin sensitivity against the 18.5-19.5% guidance.", "owner": "Equity analyst"},
+        {"priority": "long-term", "action": "Follow execution of the Pune plant and EV customer programme timelines.", "owner": "Portfolio manager"}
+      ],
+      "indicators": [],
+      "references": ["Acme Dynamics press release, 26 September 2026"],
+      "contact": "Acme Dynamics Investor Relations"
+    },
+    "infographic": {
+      "title": "Q2 FY27: Powered by EV Automation",
+      "subtitle": "Acme Dynamics grew faster, earned more per rupee and cut debt in the same quarter.",
+      "headline_stat": {"value": "₹11,600Cr", "label": "record order book, 42% from exports"},
+      "sections": [
+        {"heading": "Revenue", "icon": "trend", "stat_value": "+18%", "stat_label": "to ₹4,320 Cr", "text": "Demand for robotic assembly lines from electric-vehicle makers drove the growth."},
+        {"heading": "Margin", "icon": "chart", "stat_value": "19.1%", "stat_label": "EBITDA margin", "text": "Up from 17.4% a year earlier, despite higher steel prices."},
+        {"heading": "Profit", "icon": "money", "stat_value": "₹412 Cr", "stat_label": "PAT, +22%", "text": "Profit grew faster than revenue as margins expanded."},
+        {"heading": "Debt", "icon": "shield", "stat_value": "0.9x", "stat_label": "net debt / EBITDA", "text": "Net debt cut by ₹310 Cr to ₹1,050 Cr; target net-debt free by FY29."}
+      ],
+      "chart": {"chart_type": "bar", "title": "EBITDA margin (%)", "unit": "%", "data": [{"label": "Q2 FY26", "value": 17.4}, {"label": "Q2 FY27", "value": 19.1}, {"label": "FY27 guide (top)", "value": 19.5}]},
+      "key_messages": ["EV automation is now the growth engine.", "Margins widened even with costlier steel.", "Deleveraging continues: net-debt free by FY29."],
+      "layout": {"type": "grid", "rationale": "Four equally weighted KPIs read best as a 2x2 grid under a single hero number.", "color_palette": ["#0B0B0C", "#16A34A", "#2563EB", "#F5A524"], "typography": "Source Serif headline, Inter figures", "visual_hierarchy": ["Order book hero stat", "2x2 KPI grid", "Margin chart", "Key messages"]},
+      "call_to_action": "Full results at the investor relations page.",
+      "source_note": "Source: Acme Dynamics press release, 26 September 2026 (fictional sample)"
+    },
+    "executive_summary": {
+      "title": "Executive Summary: Acme Dynamics Q2 FY27 results",
+      "bottom_line": "A strong quarter on every headline metric, with EV automation driving 18% growth; the one item to watch is working capital, which rose to 71 days.",
+      "situation": "Acme Dynamics reported Q2 FY27 results on 26 September 2026. Revenue, margin and profit all improved, the order book reached a record and net debt fell, while working capital was stretched by inventory built for second-half EV deliveries.",
+      "key_findings": [
+        "Revenue up 18% to Rs 4,320 crore; PAT up 22% to Rs 412 crore.",
+        "EBITDA margin expanded to 19.1% from 17.4% despite steel cost pressure.",
+        "Record order book of Rs 11,600 crore with 42% export share.",
+        "Net debt down Rs 310 crore to Rs 1,050 crore (0.9x EBITDA)."
+      ],
+      "implications": [
+        "Full-year guidance of 15-17% growth looks well supported by the order book.",
+        "Working capital must normalise in H2 to keep deleveraging on track to FY29.",
+        "Pune capex of Rs 450 crore adds capacity from Q1 FY28."
+      ],
+      "metrics": [
+        {"label": "Revenue", "value": "Rs 4,320 Cr"},
+        {"label": "EBITDA margin", "value": "19.1%"},
+        {"label": "Order book", "value": "Rs 11,600 Cr"},
+        {"label": "Net debt / EBITDA", "value": "0.9x"}
+      ],
+      "recommended_actions": [
+        {"action": "Prepare investor messaging on working-capital normalisation.", "owner": "CFO / Investor Relations", "timeline": "Before the earnings call"},
+        {"action": "Set a steel price hedging review to protect the margin guidance.", "owner": "CFO", "timeline": "Q3 FY27"},
+        {"action": "Publish Pune plant milestones to support the growth narrative.", "owner": "COO", "timeline": "Quarterly"}
+      ],
+      "risks": ["Steel price volatility.", "Delays in customer EV programmes."],
+      "decision_required": "None - for awareness"
+    },
+    "presentation": {
+      "title": "Acme Dynamics Q2 FY27",
+      "subtitle": "Results overview",
+      "slides": [
+        {"layout": "title", "title": "Acme Dynamics Q2 FY27", "bullets": [], "right_bullets": [], "stat_value": "", "stat_label": "", "quote": "", "visual_suggestion": "EV assembly line photo", "speaker_notes": "Welcome to the Q2 FY27 results overview for Acme Dynamics, covering the quarter ended 30 September 2026. I'll walk through growth, profitability, the balance sheet and our outlook."},
+        {"layout": "big_stat", "title": "Revenue growth", "bullets": [], "right_bullets": [], "stat_value": "+18%", "stat_label": "to Rs 4,320 crore, led by EV automation demand", "quote": "", "visual_suggestion": "", "speaker_notes": "Revenue grew 18 percent year on year to 4,320 crore rupees. The main driver was demand for our robotic assembly lines from electric-vehicle makers."},
+        {"layout": "two_column", "title": "Profitability", "bullets": ["EBITDA Rs 825 crore", "Margin 19.1% vs 17.4%"], "right_bullets": ["PAT Rs 412 crore", "PAT growth 22%"], "stat_value": "", "stat_label": "", "quote": "", "visual_suggestion": "Margin bridge chart", "speaker_notes": "EBITDA reached 825 crore and the margin improved to 19.1 percent from 17.4 percent a year ago, despite higher steel prices. Profit after tax grew 22 percent to 412 crore."},
+        {"layout": "bullets", "title": "Order book and balance sheet", "bullets": ["Record order book: Rs 11,600 crore", "42% from exports in Europe and Southeast Asia", "Net debt down Rs 310 crore to Rs 1,050 crore", "Net debt to EBITDA at 0.9x"], "right_bullets": [], "stat_value": "", "stat_label": "", "quote": "", "visual_suggestion": "Order book stacked bar", "speaker_notes": "Our order book is at a record 11,600 crore, and 42 percent comes from exports. At the same time we cut net debt by 310 crore during the quarter."},
+        {"layout": "quote", "title": "From the CEO", "bullets": [], "right_bullets": [], "stat_value": "", "stat_label": "", "quote": "This quarter shows that our shift toward electric-vehicle automation is paying off.", "visual_suggestion": "", "speaker_notes": "Our Managing Director and CEO, Rohan Khanna, summed it up: the EV shift is paying off, and we remain committed to being net-debt free by FY29."},
+        {"layout": "bullets", "title": "Watch-points", "bullets": ["Working capital days up from 62 to 71", "Inventory built for H2 EV deliveries", "Steel price volatility", "Customer EV programme timing"], "right_bullets": [], "stat_value": "", "stat_label": "", "quote": "", "visual_suggestion": "Risk icons", "speaker_notes": "Working capital days rose from 62 to 71 because we built inventory for large EV contracts due in the second half. We expect this to normalise by year end. Steel prices and customer programme timing remain the key risks."},
+        {"layout": "bullets", "title": "Capital allocation", "bullets": ["Interim dividend: Rs 6 per share", "Rs 450 crore capex for Pune robotics plant", "Production start: Q1 FY28"], "right_bullets": [], "stat_value": "", "stat_label": "", "quote": "", "visual_suggestion": "Pune plant render", "speaker_notes": "The board approved an interim dividend of 6 rupees per share and 450 crore of capital expenditure for a new robotics plant in Pune, which should begin production in the first quarter of FY28."},
+        {"layout": "closing", "title": "Outlook", "bullets": ["FY27 revenue growth guidance: 15-17%", "EBITDA margin guidance: 18.5-19.5%", "Net-debt free target: FY29"], "right_bullets": [], "stat_value": "", "stat_label": "", "quote": "", "visual_suggestion": "", "speaker_notes": "We reiterate full-year guidance of 15 to 17 percent revenue growth and an EBITDA margin of 18.5 to 19.5 percent. Thank you, and we're happy to take questions."}
+      ]
+    }
+  }
+}

@@ -1,0 +1,9 @@
+FIELD OFFICE INCIDENT NOTE (fictional sample)
+Meridian Grid Services - Regional Field Office
+Date: 20 September 2026
+
+The regional field office reports that the intrusion was detected on 15 September 2026, when a
+user at the office reported unexpected VPN login prompts to the service desk.
+
+Three systems were affected according to the incident bridge call.
+The field office has not observed any disruption to operational technology.

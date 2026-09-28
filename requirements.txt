@@ -1,0 +1,15 @@
+fastapi==0.141.1
+uvicorn[standard]==0.54.0
+python-multipart==0.0.32
+pydantic==2.13.5
+python-dotenv==1.2.3
+huggingface_hub==2.0.0
+aiohttp>=3.9
+httpx==0.28.1
+beautifulsoup4==4.15.0
+pypdf==6.19.0
+pypdfium2==5.13.0
+pillow==12.3.0
+python-docx==1.2.0
+python-pptx==1.0.2
+imageio-ffmpeg==0.6.0
