@@ -17,7 +17,7 @@ RUN pip install -r requirements.txt
 COPY app ./app
 COPY samples ./samples
 COPY --from=web /web/dist ./web/dist
-RUN mkdir -p /data
+RUN mkdir -p /data && chmod 777 /data
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import urllib.request,os;urllib.request.urlopen(f'http://127.0.0.1:{os.getenv(\"PORT\",\"8000\")}/healthz')"
 CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]

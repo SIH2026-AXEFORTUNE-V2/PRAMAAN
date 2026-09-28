@@ -1,16 +1,22 @@
+# Render Blueprint. Free plan: no persistent disk, so transformations, audit log and ledger
+# reset when the instance restarts or redeploys, and the instance sleeps after 15 min idle.
+# For persistence switch to plan: starter and uncomment the disk block.
 services:
   - type: web
     name: pramaan
     runtime: docker
-    plan: starter            # a persistent disk needs a paid plan
+    plan: free
     healthCheckPath: /healthz
     numInstances: 1          # live state is in memory; do not scale out
-    disk:
-      name: pramaan-data
-      mountPath: /data
-      sizeGB: 1
+    autoDeploy: true
     envVars:
       - key: HF_TOKEN
-        sync: false
+        sync: false          # entered in the dashboard, never committed
       - key: PRAMAAN_ACCESS_PASSWORD
         sync: false
+      - key: PRAMAAN_DATA_DIR
+        value: /data
+    # disk:
+    #   name: pramaan-data
+    #   mountPath: /data
+    #   sizeGB: 1

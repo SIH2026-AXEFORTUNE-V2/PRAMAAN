@@ -64,7 +64,7 @@ railway variables --set HF_TOKEN=... --set PRAMAAN_ACCESS_PASSWORD=...
 railway domain                                        # public URL
 ```
 
-Render: `render.yaml` is a ready Blueprint (Docker, 1 instance, 1 GB disk at `/data`; set `HF_TOKEN` and `PRAMAAN_ACCESS_PASSWORD` in the dashboard).
+Render: `render.yaml` is a ready Blueprint (Docker, 1 instance). It defaults to the **free** plan: no persistent disk (data resets on restart) and the instance sleeps after 15 minutes idle. Switch to `plan: starter` and enable the disk block for persistence. Set `HF_TOKEN` and `PRAMAAN_ACCESS_PASSWORD` when applying the Blueprint.
 
 **Always set `PRAMAAN_ACCESS_PASSWORD` on a public URL.** It enables an HTTP Basic gate (any username, that password) on everything except `/healthz`; without it anyone with the link can upload documents and spend your model credits.
 
