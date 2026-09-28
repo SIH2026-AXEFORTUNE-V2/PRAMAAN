@@ -285,7 +285,16 @@ export interface VideoRender {
   artifact_version: number;
   resolution: string;
   models: { narration: string; motion: string | null; stills: string | null };
-  scenes: { scene: number; title: string; source: "motion" | "still" | "title card"; prompt: string }[];
+  scenes: {
+    scene: number;
+    title: string;
+    source: "motion" | "still" | "title card";
+    prompt: string;
+    spoken?: string;
+    start?: number;
+    end?: number;
+    captions?: [string, number, number][];
+  }[];
 }
 
 export interface ConsistencyConflict {

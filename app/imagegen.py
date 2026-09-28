@@ -32,8 +32,8 @@ no numbers, no real organisation or person names. 12-28 words, present tense, no
 SCENE_SCHEMA = {"type": "object", "properties": {"scene": {"type": "string", "description": "The scene, 12-28 words."}},
                 "required": ["scene"]}
 # Words that make image models draw typography or UI. Graphics like these belong in the infographic, not here.
-TEXTY = re.compile(r"\b(?:company\s+)?(?:logos?|icons?(?:\s+set)?|diagrams?|charts?|graphs?|timelines?|infographics?|tables?|"
-                   r"texts?|titles?|labels?|captions?|bullet(?:\s+points?)?|slides?|screenshots?|dashboards?|ui|"
+TEXTY = re.compile(r"\b(?:company\s+)?(?:logos?|icons?(?:\s+set)?|diagrams?|charts?|graphs?|timelines?|infographics?|"
+                   r"texts?|titles?|labels?|captions?|bullet(?:\s+points?)?|slides?|screenshots?|dashboards?|ui|data\s+tables?|"
                    r"split[- ]screen|headlines?|words?|typography|lower[- ]thirds?|overlays?|graphics?|numbers?|"
                    r"statistics?|stats?|callouts?|badges?|banners?)\b", re.I)
 
@@ -69,8 +69,8 @@ def slots(otype: str, content: dict, domain: str = "") -> list[dict]:
     return out
 
 
-def _scrub(text: str, removed: list[str]) -> str:
-    for f in sorted(scan_text(text), key=lambda x: -x["span"][0]):
+def _scrub(text: str, removed: list[str], ignore: frozenset = frozenset()) -> str:
+    for f in sorted((f for f in scan_text(text) if f["class"] not in ignore), key=lambda x: -x["span"][0]):
         a, b = f["span"]
         removed.append(f["label"])
         text = text[:a] + " " + text[b:]
@@ -90,7 +90,9 @@ def art_brief(brief: str, topic: str) -> tuple[str, list[str]]:
 
 
 def scene_prompt(scene: str) -> str:
-    cleaned = _scrub(TEXTY.sub(" ", scene or ""), [])
+    # Art-director output is generic imagery built from already-scrubbed input, so generic places like
+    # "server room" are allowed; identifiers, credentials, PII and markings are still removed.
+    cleaned = _scrub(TEXTY.sub(" ", scene or ""), [], ignore=frozenset({"location"}))
     return f"{cleaned[:260]}. {STYLE}. {GUARD}."
 
 

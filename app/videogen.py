@@ -41,7 +41,9 @@ def motion_available() -> bool:
 
 def speakable(text: str) -> str:
     """Released text may contain policy markers; say them naturally instead of reading brackets."""
-    text = re.sub(r"\[REDACTED:[^\]]*\]", "withheld", text or "")
+    text = re.sub(r"\[\.\]", " dot ", text or "")          # defanged indicators, e.g. heron-update[.]example
+    text = re.sub(r"\b(\d{1,3}\.\d{1,3})\.x\.x\b", r"\1 dot x dot x", text)
+    text = re.sub(r"\[REDACTED:[^\]]*\]", "withheld", text)
     text = re.sub(r"\[(?:internal system|restricted)\]", "an internal system", text)
     text = re.sub(r"\[facility location withheld\]", "a secure facility", text)
     text = re.sub(r"\[[^\]]{1,60}\]", "", text)
@@ -154,7 +156,7 @@ def chunks(narration: str, total: float) -> list[tuple[str, float, float]]:
     return out
 
 
-def render_segment(work: Path, idx: int, visual: Path, is_clip: bool, audio: Path, narration: str) -> Path:
+def render_segment(work: Path, idx: int, visual: Path, is_clip: bool, audio: Path, narration: str) -> tuple[Path, float, list]:
     speech = duration(audio)
     seg_len = max(speech + PAD, 3.5)
     frames = int(seg_len * FPS) + 1
@@ -185,7 +187,31 @@ def render_segment(work: Path, idx: int, visual: Path, is_clip: bool, audio: Pat
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode != 0:
         raise EngineError(f"Encoding scene {idx} failed: {res.stderr.strip()[-300:]}")
-    return out
+    return out, seg_len, caps
+
+
+def tc(sec: float) -> str:
+    m, s = divmod(max(sec, 0.0), 60)
+    return f"{int(m):02d}:{s:04.1f}"
+
+
+def production_script(title: str, tid: str, render: dict) -> str:
+    """Markdown production script of what was actually rendered: timecodes, spoken lines, subtitles, visuals."""
+    out = [f"# Production script · {title}", "",
+           f"Transformation {tid} · Video Package v{render['artifact_version']} · {render['seconds']:.0f} s · {render['resolution']}",
+           f"Narration: {render['models']['narration']} · Motion: {render['models']['motion'] or 'not configured (animated stills)'}"
+           f" · Stills: {render['models']['stills'] or '—'}",
+           f"Video sha256: {render['sha256']}", "",
+           "Narration is the verified, released script; visuals are AI-generated illustrations, not evidence.", ""]
+    for s in render["scenes"]:
+        out += [f"## Scene {s['scene']} · {tc(s.get('start', 0))}–{tc(s.get('end', 0))} · {s['title']}", "",
+                f"**Visual** ({'motion clip' if s['source'] == 'motion' else s['source']}): {s['prompt']}", "",
+                f"**Narration (spoken):** {s.get('spoken', '')}", ""]
+        if s.get("captions"):
+            out.append("**Subtitles:**")
+            out += [f"- {tc(s['start'] + c[1])}–{tc(s['start'] + c[2])}  {c[0]}" for c in s["captions"]]
+            out.append("")
+    return "\n".join(out)
 
 
 def stitch(work: Path, segments: list[Path], out: Path) -> float:

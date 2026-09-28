@@ -867,11 +867,14 @@ async def render_video(t: dict) -> None:
         if not scenes:
             raise EngineError("The video package has no narrated scenes.")
         prepared = sorted(await asyncio.gather(*(prep(i, s) for i, s in enumerate(scenes))), key=lambda x: x["i"])
-        segments = []
+        segments, clock = [], 0.0
         for k, p in enumerate(prepared, 1):
             tk["detail"] = f"Encoding scene {k}/{len(prepared)}"
-            segments.append(await asyncio.to_thread(videogen.render_segment, work, p["i"], p["visual"],
-                                                    p["source"] == "motion", p["audio"], p["spoken"]))
+            seg, seg_len, caps = await asyncio.to_thread(videogen.render_segment, work, p["i"], p["visual"],
+                                                         p["source"] == "motion", p["audio"], p["spoken"])
+            segments.append(seg)
+            p.update(start=round(clock, 2), end=round(clock + seg_len, 2), captions=[[c[0], round(c[1], 2), round(c[2], 2)] for c in caps])
+            clock += seg_len
             tk["progress"] = int(50 + 45 * k / len(prepared))
         tk["detail"] = "Joining scenes"
         out = video_path(t["id"])
@@ -884,7 +887,8 @@ async def render_video(t: dict) -> None:
             "artifact_version": a["version"], "resolution": f"{videogen.W}x{videogen.H}",
             "models": {"narration": config.TTS_MODEL, "motion": config.VIDEO_MODEL if videogen.motion_available() else None,
                        "stills": config.IMAGE_MODEL if imagegen.available() else None},
-            "scenes": [{"scene": p["scene"], "title": p["title"], "source": p["source"], "prompt": p["prompt"]} for p in prepared],
+            "scenes": [{"scene": p["scene"], "title": p["title"], "source": p["source"], "prompt": p["prompt"],
+                        "spoken": p["spoken"], "start": p["start"], "end": p["end"], "captions": p["captions"]} for p in prepared],
         }
         shutil.rmtree(work, ignore_errors=True)
         entry = ledger.record("video_render", t["id"], {"artifact": "video", "version": a["version"], "sha256": digest,

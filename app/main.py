@@ -616,6 +616,13 @@ async def export(tid: str, otype: str, fmt: str):
     a = _art(t, otype)
     if a["approval"]["status"] != "approved":
         raise HTTPException(403, "Export requires human approval of the current version.")
+    if fmt == "script":
+        if otype != "video" or not a.get("video_render"):
+            raise HTTPException(404, "Render the video first; the production script describes the rendered MP4.")
+        body = (videogen.production_script(t["title"], tid, a["video_render"]) + f"\n\n---\n{_footer(t, a)}\n").encode()
+        orc.record_export(t, otype, fmt)
+        return Response(body, media_type="text/markdown; charset=utf-8",
+                        headers={"Content-Disposition": f'attachment; filename="{exporters.filename(t, otype, "md").replace("-video.md", "-production-script.md")}"'})
     if fmt == "mp4":
         p = orc.video_path(tid)
         if otype != "video" or not p.exists():
@@ -637,8 +644,10 @@ async def export_bundle(tid: str):
     if not any(a["approval"]["status"] == "approved" for a in t["artifacts"].values()):
         raise HTTPException(403, "Approve at least one artefact before exporting a bundle.")
     data = exporters.bundle(t, lambda a: _footer(t, a), lambda o: _image_files(tid, o),
-                            lambda o: {"video/pramaan-video.mp4": orc.video_path(tid).read_bytes()}
-                            if o == "video" and orc.video_path(tid).exists() else {})
+                            lambda o: {"video/pramaan-video.mp4": orc.video_path(tid).read_bytes(),
+                                       "video/production-script.md": videogen.production_script(
+                                           t["title"], tid, t["artifacts"]["video"]["video_render"]).encode()}
+                            if o == "video" and orc.video_path(tid).exists() and t["artifacts"]["video"].get("video_render") else {})
     ledger.audit("Bundle exported", tid, actor=settings.operator(), actor_type="user", transformation_id=tid)
     return Response(data, media_type="application/zip",
                     headers={"Content-Disposition": f'attachment; filename="{tid}-approved-bundle.zip"'})
