@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Bell, Lock, Menu, Monitor, Moon, PanelLeft, Server, Sun } from "lucide-react";
+import { api } from "@/lib/api";
 import { cx, relative } from "@/lib/format";
 import { useApp, type ThemePref } from "@/store/app";
 import { IconButton } from "../ui/Button";
@@ -167,6 +168,10 @@ function ThemeMenu() {
 function UserMenu() {
   const config = useApp((s) => s.config);
   const [open, setOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => {
+    if (open) api.authStatus().then((s) => setSignedIn(s.enabled && s.authenticated)).catch(() => setSignedIn(false));
+  }, [open]);
   const name = config?.operator.name ?? "Operator";
   const initials = name
     .split(/\s+/)
@@ -191,9 +196,20 @@ function UserMenu() {
         <p className="mt-1 text-2xs text-subtle">Workspace · {config?.workspace}</p>
         <div className="my-2.5 h-px bg-border" />
         <p className="text-2xs leading-relaxed text-muted">Single-operator local mode. SSO and role-based access are not configured in this build.</p>
-        <Link to="/settings" onClick={() => setOpen(false)} className="mt-2 inline-block text-2xs font-semibold text-accent hover:underline">
-          Profile & access settings
-        </Link>
+        <div className="mt-3 flex items-center justify-between">
+          <Link to="/settings" onClick={() => setOpen(false)} className="text-xs font-semibold text-accent hover:underline">
+            Profile & access settings
+          </Link>
+          {signedIn && (
+            <button
+              type="button"
+              onClick={() => void api.logout().finally(() => window.location.reload())}
+              className="text-xs font-semibold text-muted hover:text-fg"
+            >
+              Sign out
+            </button>
+          )}
+        </div>
       </Popover>
     </div>
   );

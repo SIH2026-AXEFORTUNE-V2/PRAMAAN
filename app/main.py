@@ -1,12 +1,15 @@
 """PRAMAAN HTTP API and web app host."""
 from __future__ import annotations
 
+import asyncio
 import base64
+import hashlib
 import hmac
 import io
 import json
 import logging
 import re
+import time
 
 from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
@@ -30,22 +33,84 @@ DEMO_SOURCES = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# Access gate (PRAMAAN_ACCESS_PASSWORD). The app shell is public; every /api route needs a signed,
+# HttpOnly session cookie issued by /api/auth/login. Basic credentials are accepted for API tooling,
+# but no browser challenge is ever sent, so users only see the PRAMAAN sign-in screen.
+# ---------------------------------------------------------------------------
+SESSION_COOKIE = "pramaan_session"
+SESSION_HOURS = 12
+PUBLIC_API = {"/api/auth/login", "/api/auth/status", "/api/auth/logout"}
+
+
+def _session_key() -> bytes:
+    return hashlib.sha256(("pramaan-session:" + config.ACCESS_PASSWORD).encode()).digest()
+
+
+def _issue_session() -> str:
+    exp = int(time.time()) + SESSION_HOURS * 3600
+    return f"{exp}.{hmac.new(_session_key(), str(exp).encode(), hashlib.sha256).hexdigest()}"
+
+
+def _session_ok(token: str | None) -> bool:
+    exp, _, mac = (token or "").partition(".")
+    if not exp.isdigit() or int(exp) < time.time():
+        return False
+    return hmac.compare_digest(mac, hmac.new(_session_key(), exp.encode(), hashlib.sha256).hexdigest())
+
+
+def _basic_ok(header: str) -> bool:
+    if not header.startswith("Basic "):
+        return False
+    try:
+        _, _, password = base64.b64decode(header[6:]).decode("utf-8", "replace").partition(":")
+    except ValueError:
+        return False
+    return hmac.compare_digest(password.encode(), config.ACCESS_PASSWORD.encode())
+
+
+def _authenticated(request: Request) -> bool:
+    return (not config.ACCESS_PASSWORD) or _session_ok(request.cookies.get(SESSION_COOKIE)) \
+        or _basic_ok(request.headers.get("authorization", ""))
+
+
 @app.middleware("http")
 async def access_gate(request: Request, call_next):
-    """Password gate for deployments (PRAMAAN_ACCESS_PASSWORD). Browsers re-send the credentials
-    automatically for every same-origin request, so the SPA, API calls and downloads all work."""
-    if not config.ACCESS_PASSWORD or request.url.path == "/healthz":
+    path = request.url.path
+    if not config.ACCESS_PASSWORD or not path.startswith("/api/") or path in PUBLIC_API or _authenticated(request):
         return await call_next(request)
-    header = request.headers.get("authorization", "")
-    if header.startswith("Basic "):
-        try:
-            _, _, password = base64.b64decode(header[6:]).decode("utf-8", "replace").partition(":")
-        except (ValueError, UnicodeDecodeError):
-            password = ""
-        if hmac.compare_digest(password.encode(), config.ACCESS_PASSWORD.encode()):
-            return await call_next(request)
-    return Response("Authentication required", status_code=401,
-                    headers={"WWW-Authenticate": 'Basic realm="PRAMAAN", charset="UTF-8"'})
+    return JSONResponse({"detail": "Sign in required.", "auth": "required"}, status_code=401)
+
+
+class Login(BaseModel):
+    password: str = Field(max_length=200)
+
+
+@app.get("/api/auth/status")
+async def auth_status(request: Request):
+    return {"enabled": bool(config.ACCESS_PASSWORD), "authenticated": _authenticated(request)}
+
+
+@app.post("/api/auth/login")
+async def auth_login(body: Login, request: Request):
+    if not config.ACCESS_PASSWORD:
+        return {"ok": True}
+    if not hmac.compare_digest(body.password.encode(), config.ACCESS_PASSWORD.encode()):
+        await asyncio.sleep(0.8)  # slow down guessing
+        ledger.audit("Sign-in failed", "workspace", actor="Unknown", actor_type="user", status="warning")
+        raise HTTPException(401, "Incorrect access password.")
+    secure = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+    resp = JSONResponse({"ok": True})
+    resp.set_cookie(SESSION_COOKIE, _issue_session(), max_age=SESSION_HOURS * 3600, httponly=True,
+                    samesite="lax", secure=secure, path="/")
+    return resp
+
+
+@app.post("/api/auth/logout")
+async def auth_logout():
+    resp = JSONResponse({"ok": True})
+    resp.delete_cookie(SESSION_COOKIE, path="/")
+    return resp
 
 
 @app.on_event("startup")

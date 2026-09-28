@@ -66,7 +66,7 @@ railway domain                                        # public URL
 
 Render: `render.yaml` is a ready Blueprint (Docker, 1 instance). It defaults to the **free** plan: no persistent disk (data resets on restart) and the instance sleeps after 15 minutes idle. Switch to `plan: starter` and enable the disk block for persistence. Set `HF_TOKEN` and `PRAMAAN_ACCESS_PASSWORD` when applying the Blueprint.
 
-**Always set `PRAMAAN_ACCESS_PASSWORD` on a public URL.** It enables an HTTP Basic gate (any username, that password) on everything except `/healthz`; without it anyone with the link can upload documents and spend your model credits.
+**Always set `PRAMAAN_ACCESS_PASSWORD` on a public URL.** Visitors get a PRAMAAN sign-in screen; a correct password issues a signed, HttpOnly session cookie (12 h) and every `/api` route requires it. Without it anyone with the link can upload documents and spend your model credits. API tools can also send the password as HTTP Basic credentials.
 
 ## Layout
 

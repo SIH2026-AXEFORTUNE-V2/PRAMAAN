@@ -34,6 +34,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   } catch {
     throw new ApiError(0, "The PRAMAAN server is not reachable. Check that it is running.");
   }
+  if (res.status === 401 && path.startsWith("/api/") && !path.startsWith("/api/auth/")) {
+    window.dispatchEvent(new Event("pramaan:auth-required"));
+  }
   if (!res.ok) {
     let message = res.statusText || `Request failed (${res.status})`;
     try {
@@ -66,6 +69,9 @@ export interface CreatePayload {
 }
 
 export const api = {
+  authStatus: () => request<{ enabled: boolean; authenticated: boolean }>("/api/auth/status"),
+  login: (password: string) => request<{ ok: boolean }>("/api/auth/login", json("POST", { password })),
+  logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
   config: () => request<AppConfig>("/api/config"),
   samples: () => request<DemoSource[]>("/api/samples"),
   async sampleFile(s: DemoSource): Promise<File> {

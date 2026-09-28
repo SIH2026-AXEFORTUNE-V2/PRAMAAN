@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, Link, Navigate, RouterProvider } from "react-router-dom";
 import { AppShell } from "@/components/shell/AppShell";
+import { AuthGate } from "@/components/shell/AuthGate";
 import { EmptyState, Skeleton } from "@/components/ui/misc";
 import { WorkspacePage } from "@/pages/WorkspacePage";
 
@@ -54,5 +55,9 @@ const router = createBrowserRouter([
 ]);
 
 export function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <AuthGate>
+      <RouterProvider router={router} />
+    </AuthGate>
+  );
 }
